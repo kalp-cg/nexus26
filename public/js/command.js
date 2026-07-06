@@ -467,9 +467,15 @@ function setMapLayer(layerName) {
   document.getElementById('layer-btn-crowd').classList.remove('active-low');
   document.getElementById('layer-btn-waste').classList.remove('active-low');
   document.getElementById('layer-btn-security').classList.remove('active-low');
+  document.getElementById('layer-btn-crowd').setAttribute('aria-pressed', 'false');
+  document.getElementById('layer-btn-waste').setAttribute('aria-pressed', 'false');
+  document.getElementById('layer-btn-security').setAttribute('aria-pressed', 'false');
 
   const activeBtn = document.getElementById(`layer-btn-${layerName}`);
-  if (activeBtn) activeBtn.classList.add('active-low');
+  if (activeBtn) {
+    activeBtn.classList.add('active-low');
+    activeBtn.setAttribute('aria-pressed', 'true');
+  }
 
   refreshMapLayerHighlights();
 }
@@ -749,13 +755,17 @@ function toggleMapView(view) {
 
   btn2D.classList.remove('active-low');
   btn3D.classList.remove('active-low');
+  btn2D.setAttribute('aria-pressed', 'false');
+  btn3D.setAttribute('aria-pressed', 'false');
 
   if (view === '2d') {
     btn2D.classList.add('active-low');
+    btn2D.setAttribute('aria-pressed', 'true');
     svgMap.classList.remove('hidden');
     threeContainer.classList.add('hidden');
   } else {
     btn3D.classList.add('active-low');
+    btn3D.setAttribute('aria-pressed', 'true');
     svgMap.classList.add('hidden');
     threeContainer.classList.remove('hidden');
 

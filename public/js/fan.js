@@ -170,8 +170,10 @@ function setLanguage(lang) {
   currentLanguage = lang;
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.remove('active');
+    btn.setAttribute('aria-pressed', 'false');
     if (btn.textContent.toLowerCase() === lang) {
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
     }
   });
 
@@ -189,6 +191,7 @@ function setLanguage(lang) {
 function toggleAccessibility() {
   accessibilityEnabled = !accessibilityEnabled;
   accessToggle.classList.toggle('active', accessibilityEnabled);
+  accessToggle.setAttribute('aria-pressed', String(accessibilityEnabled));
 
   if (accessibilityEnabled) {
     accessToggle.textContent = 'Route: Accessible';
@@ -514,13 +517,17 @@ function toggleMapView(view) {
 
   btn2D.classList.remove('active-low');
   btn3D.classList.remove('active-low');
+  btn2D.setAttribute('aria-pressed', 'false');
+  btn3D.setAttribute('aria-pressed', 'false');
 
   if (view === '2d') {
     btn2D.classList.add('active-low');
+    btn2D.setAttribute('aria-pressed', 'true');
     svgMap.classList.remove('hidden');
     threeContainer.classList.add('hidden');
   } else {
     btn3D.classList.add('active-low');
+    btn3D.setAttribute('aria-pressed', 'true');
     svgMap.classList.add('hidden');
     threeContainer.classList.remove('hidden');
 

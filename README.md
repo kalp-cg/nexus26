@@ -59,9 +59,10 @@ nexus26/
 ├── .eslintrc.json                   # ESLint code quality configuration
 ├── .prettierrc                      # Prettier formatting configuration
 ├── jest.config.js                   # Jest test configuration with coverage thresholds
+├── SECURITY.md                      # Security controls and responsible reporting notes
 ├── package.json                     # Dependency manifests & startup scripts
 ├── server.js                        # Node/Express backend & WebSocket Spine
-├── server.test.js                   # Jest unit test suite (36 assertions)
+├── server.test.js                   # Jest unit test suite (expanded API/security assertions)
 └── test_queries.js                  # Automated CLI integration test suite
 ```
 </details>
@@ -160,7 +161,7 @@ Arrange two browser windows side-by-side:
 
 ## Automated Testing
 
-### Jest Unit Test Suite (36 assertions)
+### Jest Unit Test Suite
 Run the full test suite with:
 ```bash
 npm test
@@ -173,6 +174,7 @@ npm run test:coverage
 The suite validates:
 - All REST API endpoints (GET/POST) with correct status codes
 - Input validation (400 responses for missing/invalid fields)
+- Defensive validation for numeric sensor payloads, transit statuses, chat personas, and chat history size
 - 404 handling for non-existent resources and unknown endpoints
 - XSS injection sanitization (verifies `<script>` tags are escaped)
 - Volunteer dispatch lifecycle (create report → assign volunteer)
@@ -196,7 +198,7 @@ node test_queries.js
 | **JSDoc** | All functions, routes, and modules annotated with `@param`/`@returns` |
 | **Strict Mode** | `'use strict'` enforced across all JS files |
 | **Structured Logging** | Timestamped `[ISO] [LEVEL] [MODULE]` format via `log()` utility |
-| **Input Validation** | All POST endpoints validate required fields with 400 responses |
+| **Input Validation** | All POST endpoints validate required fields, supported enum values, and numeric ranges with structured 400 responses |
 | **Error Handling** | Global 404 handler + centralized error middleware |
 | **Environment Validation** | Startup check logs config state and warns on missing keys |
 
@@ -214,6 +216,7 @@ node test_queries.js
 | **Rate Limiting** | 180 requests/minute per IP sliding window |
 | **Body Size Limit** | 100kb max JSON payload to prevent DoS |
 | **Path Traversal** | Whitelist-only file access (`ALLOWED_FILES` array) |
+| **Responsible Disclosure** | `SECURITY.md` documents supported reporting flow and current controls |
 
 ---
 

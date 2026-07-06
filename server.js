@@ -47,9 +47,46 @@ const wss = new WebSocket.Server({ server });
 
 /** @constant {number|string} PORT - Server listening port from env or default 3000 */
 const PORT = process.env.PORT || 3000;
+const MAX_CHAT_MESSAGE_LENGTH = 1200;
+const MAX_CHAT_HISTORY_ITEMS = 12;
+const VALID_PERSONAS = ['fan', 'command'];
+const VALID_TRANSIT_STATUSES = ['on_time', 'delayed', 'suspended', 'crowded'];
 
 // Local wrapper for writeJSON passing current directory as baseDir
 const localWriteJSON = (fileName, data) => writeJSON(fileName, data, __dirname);
+
+/**
+ * Converts a request body value to a finite number within an expected range.
+ * @param {*} value - Raw request body value
+ * @param {number} min - Inclusive minimum
+ * @param {number} max - Inclusive maximum
+ * @returns {number|null} Parsed number or null when invalid
+ */
+const parseBoundedNumber = (value, min, max) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  const numberValue = Number(value);
+  if (!Number.isFinite(numberValue) || numberValue < min || numberValue > max) {
+    return null;
+  }
+  return numberValue;
+};
+
+/**
+ * Normalizes and limits chat history supplied by the browser before it reaches
+ * an AI provider or fallback agent.
+ * @param {*} history - Raw request body history
+ * @returns {Array<Object>|null} Sanitized history or null when the shape is invalid
+ */
+const sanitizeChatHistory = (history) => {
+  if (history === undefined) return [];
+  if (!Array.isArray(history) || history.length > MAX_CHAT_HISTORY_ITEMS) {
+    return null;
+  }
+  return history.map((item) => ({
+    role: sanitizeInput(item && item.role),
+    content: sanitizeInput(item && item.content)
+  }));
+};
 
 /**
  * HTTP Security Headers Middleware
@@ -126,6 +163,13 @@ app.use((req, res, next) => {
 // Parse JSON bodies with a 100kb size limit to prevent large payload attacks
 app.use(express.json({ limit: '100kb' }));
 
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Malformed JSON request body' });
+  }
+  next(err);
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize memory-cached database
@@ -169,8 +213,8 @@ app.get('/api/sensors', (req, res) => {
 app.post('/api/sensors/update', (req, res) => {
   const gate_id = sanitizeInput(req.body.gate_id);
   const congestion_level = sanitizeInput(req.body.congestion_level);
-  const current_count = req.body.current_count;
-  const avg_wait_min = req.body.avg_wait_min;
+  const current_count = parseBoundedNumber(req.body.current_count, 0, 100000);
+  const avg_wait_min = parseBoundedNumber(req.body.avg_wait_min, 0, 240);
 
   // Input validation
   if (!gate_id) {
@@ -179,6 +223,12 @@ app.post('/api/sensors/update', (req, res) => {
   const validLevels = ['low', 'medium', 'high', 'critical'];
   if (congestion_level && !validLevels.includes(congestion_level)) {
     return res.status(400).json({ error: `congestion_level must be one of: ${validLevels.join(', ')}` });
+  }
+  if (current_count === null) {
+    return res.status(400).json({ error: 'current_count must be a number between 0 and 100000' });
+  }
+  if (avg_wait_min === null) {
+    return res.status(400).json({ error: 'avg_wait_min must be a number between 0 and 240' });
   }
 
   const sensorData = readJSON('gate_sensors.json');
@@ -210,7 +260,7 @@ app.get('/api/transit', (req, res) => {
 app.post('/api/transit/update', (req, res) => {
   const line = sanitizeInput(req.body.line);
   const status = sanitizeInput(req.body.status);
-  const delay_min = Number(req.body.delay_min) || 0;
+  const delay_min = parseBoundedNumber(req.body.delay_min, 0, 240);
 
   // Input validation
   if (!line) {
@@ -218,6 +268,12 @@ app.post('/api/transit/update', (req, res) => {
   }
   if (!status) {
     return res.status(400).json({ error: 'status is required' });
+  }
+  if (!VALID_TRANSIT_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `status must be one of: ${VALID_TRANSIT_STATUSES.join(', ')}` });
+  }
+  if (delay_min === null) {
+    return res.status(400).json({ error: 'delay_min must be a number between 0 and 240' });
   }
 
   const transitData = readJSON('transit_feeds.json');
@@ -362,13 +418,20 @@ app.post('/api/chat/:persona', async (req, res) => {
   const history = req.body.history;
   const userApiKey = req.body.userApiKey; // Keep API Key raw, never leak or mutate
   const current_location = req.body.current_location;
-  const accessibility_enabled = req.body.accessibility_enabled;
+  const accessibility_enabled = Boolean(req.body.accessibility_enabled);
+
+  if (!VALID_PERSONAS.includes(persona)) {
+    return res.status(404).json({ error: `Persona '${persona}' is not supported` });
+  }
+  if (!message || message.length > MAX_CHAT_MESSAGE_LENGTH) {
+    return res.status(400).json({ error: `message is required and must be ${MAX_CHAT_MESSAGE_LENGTH} characters or fewer` });
+  }
 
   const activeKey = userApiKey || process.env.GEMINI_API_KEY;
-  const sanitizedHistory = (history || []).map(h => ({
-    role: sanitizeInput(h.role),
-    content: sanitizeInput(h.content)
-  }));
+  const sanitizedHistory = sanitizeChatHistory(history);
+  if (!sanitizedHistory) {
+    return res.status(400).json({ error: `history must be an array with at most ${MAX_CHAT_HISTORY_ITEMS} items` });
+  }
 
   log('INFO', 'API', `Chat Request | Persona: ${persona} | Key present: ${!!activeKey}`);
 

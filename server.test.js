@@ -64,6 +64,14 @@ describe('Nexus26 REST API — Core Operations', () => {
     expect(res.body.error).toContain('congestion_level');
   });
 
+  test('POST /api/sensors/update rejects invalid numeric sensor payloads', async () => {
+    const res = await request(app)
+      .post('/api/sensors/update')
+      .send({ gate_id: 'A1', congestion_level: 'high', current_count: 'many', avg_wait_min: 12 });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toContain('current_count');
+  });
+
   test('POST /api/sensors/update returns 404 for non-existent gate', async () => {
     const res = await request(app)
       .post('/api/sensors/update')
@@ -95,6 +103,20 @@ describe('Nexus26 REST API — Core Operations', () => {
       .send({ line: 'Ghost Express', status: 'delayed' });
     expect(res.statusCode).toBe(404);
     expect(res.body).toHaveProperty('error');
+  });
+
+  test('POST /api/transit/update rejects invalid status and delay values', async () => {
+    const statusRes = await request(app)
+      .post('/api/transit/update')
+      .send({ line: 'K Line', status: 'teleporting', delay_min: 5 });
+    expect(statusRes.statusCode).toBe(400);
+    expect(statusRes.body.error).toContain('status');
+
+    const delayRes = await request(app)
+      .post('/api/transit/update')
+      .send({ line: 'K Line', status: 'delayed', delay_min: -5 });
+    expect(delayRes.statusCode).toBe(400);
+    expect(delayRes.body.error).toContain('delay_min');
   });
 
   // ── Reports Endpoints ─────────────────────────────────────────────────────────
@@ -202,6 +224,29 @@ describe('Nexus26 REST API — Core Operations', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('text');
     expect(res.body.mode).toBe('fallback-agent');
+  });
+
+  test('POST /api/chat rejects unsupported personas and missing messages', async () => {
+    const personaRes = await request(app)
+      .post('/api/chat/referee')
+      .send({ message: 'status?', history: [] });
+    expect(personaRes.statusCode).toBe(404);
+    expect(personaRes.body.error).toContain('not supported');
+
+    const messageRes = await request(app)
+      .post('/api/chat/fan')
+      .send({ history: [] });
+    expect(messageRes.statusCode).toBe(400);
+    expect(messageRes.body.error).toContain('message');
+  });
+
+  test('POST /api/chat rejects malformed history arrays', async () => {
+    const history = Array.from({ length: 13 }, () => ({ role: 'user', content: 'hello' }));
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'Route to Section 102', history });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toContain('history');
   });
 
   // ── Chat Persona: Fan Fallback Agent Details ───────────────────────────────

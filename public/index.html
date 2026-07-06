@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Nexus26 is a FIFA World Cup 2026 AI operations brain for fan routing, accessibility support, live transit updates, and venue command dispatch.">
   <title>Nexus26 — FIFA World Cup 2026 AI Operations Brain</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,9 +30,9 @@
         <h4>Gemini API Key Configuration</h4>
         <p>Enter your Gemini API key below to enable real-time function calling and translation. If left blank, the system automatically uses its rule-based fallback Mock-Agent to ensure a fully interactive demo.</p>
         <div class="api-input-group">
-          <input type="password" id="global-api-key" aria-label="Gemini API Key" placeholder="Enter GEMINI_API_KEY here..." />
+          <input type="password" id="global-api-key" aria-label="Gemini API Key" autocomplete="off" placeholder="Enter GEMINI_API_KEY here..." />
           <button onclick="saveApiKey()" id="save-key-btn" aria-label="Save Gemini API Key">Save Key</button>
-          <span id="key-status" class="key-status-label status-idle">Not configured (Fallback Mode Active)</span>
+          <span id="key-status" class="key-status-label status-idle" role="status" aria-live="polite">Not configured (Fallback Mode Active)</span>
         </div>
       </div>
     </div>
@@ -51,7 +52,7 @@
           </ul>
           <div class="btn-group">
             <a href="fan.html" class="btn btn-primary btn-glow" aria-label="Launch Mobile Fan Companion View">Launch Mobile View</a>
-            <a href="fan.html" target="_blank" class="btn btn-secondary" aria-label="Open Mobile Fan Companion View in a New Tab">Open New Tab</a>
+            <a href="fan.html" target="_blank" rel="noopener" class="btn btn-secondary" aria-label="Open Mobile Fan Companion View in a New Tab">Open New Tab</a>
           </div>
         </div>
       </div>
@@ -70,7 +71,7 @@
           </ul>
           <div class="btn-group">
             <a href="command.html" class="btn btn-cyan btn-glow" aria-label="Launch Venue Command Center Dashboard">Launch Dashboard</a>
-            <a href="command.html" target="_blank" class="btn btn-secondary" aria-label="Open Venue Command Center Dashboard in a New Tab">Open New Tab</a>
+            <a href="command.html" target="_blank" rel="noopener" class="btn btn-secondary" aria-label="Open Venue Command Center Dashboard in a New Tab">Open New Tab</a>
           </div>
         </div>
       </div>

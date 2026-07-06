@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Mobile fan companion for FIFA World Cup 2026 wayfinding, accessible routing, transit status, voice guidance, and live stadium alerts.">
   <title>Nexus26 — Global Fan Surface</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +26,7 @@
       </button>
       <div class="conn-status">
         <span class="status-dot" id="ws-status"></span>
-        <span id="ws-text">Connecting...</span>
+        <span id="ws-text" role="status" aria-live="polite">Connecting...</span>
       </div>
     </div>
   </header>
@@ -34,7 +35,7 @@
   <div class="api-key-drawer hidden" id="api-key-drawer">
     <span class="drawer-title">Gemini API Key Manager</span>
     <div class="drawer-controls">
-      <input type="password" id="drawer-api-key" aria-label="Drawer Gemini API Key" placeholder="Enter GEMINI_API_KEY here..." />
+      <input type="password" id="drawer-api-key" aria-label="Drawer Gemini API Key" autocomplete="off" placeholder="Enter GEMINI_API_KEY here..." />
       <button class="btn btn-primary" onclick="saveDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Save</button>
       <button class="btn btn-secondary" onclick="clearDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Clear</button>
     </div>
@@ -46,12 +47,12 @@
         <!-- Controls Header: Lang & Accessibility -->
         <div class="fan-actions-row">
           <div class="lang-selector">
-            <button class="lang-btn active" onclick="setLanguage('en')" aria-label="Set language to English">EN</button>
-            <button class="lang-btn" onclick="setLanguage('es')" aria-label="Set language to Spanish">ES</button>
-            <button class="lang-btn" onclick="setLanguage('fr')" aria-label="Set language to French">FR</button>
-            <button class="lang-btn" onclick="setLanguage('de')" aria-label="Set language to German">DE</button>
+            <button class="lang-btn active" onclick="setLanguage('en')" aria-label="Set language to English" aria-pressed="true">EN</button>
+            <button class="lang-btn" onclick="setLanguage('es')" aria-label="Set language to Spanish" aria-pressed="false">ES</button>
+            <button class="lang-btn" onclick="setLanguage('fr')" aria-label="Set language to French" aria-pressed="false">FR</button>
+            <button class="lang-btn" onclick="setLanguage('de')" aria-label="Set language to German" aria-pressed="false">DE</button>
           </div>
-          <button class="accessibility-toggle" id="access-toggle" onclick="toggleAccessibility()" title="Toggle Wheelchair / Stroller Accessible Rerouting" aria-label="Toggle Wheelchair or Stroller Accessible Rerouting">
+          <button class="accessibility-toggle" id="access-toggle" onclick="toggleAccessibility()" title="Toggle Wheelchair / Stroller Accessible Rerouting" aria-label="Toggle Wheelchair or Stroller Accessible Rerouting" aria-pressed="false">
             Route: Standard
           </button>
         </div>
@@ -60,7 +61,7 @@
         <div class="system-alert-banner hidden" id="system-alert-banner">
           <div class="alert-banner-header">
             <span id="alert-banner-title">CRITICAL ALERT</span>
-            <button onclick="dismissAlertBanner()" class="alert-close-btn">&times;</button>
+            <button onclick="dismissAlertBanner()" class="alert-close-btn" aria-label="Dismiss system alert">&times;</button>
           </div>
           <div class="alert-banner-body" id="alert-banner-msg">
             Warning details...
@@ -97,15 +98,17 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
           <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Navigation View</span>
           <div class="layer-selector" style="display:flex; gap:0.25rem; background:rgba(255,255,255,0.04); padding:0.15rem; border-radius:4px; border:1px solid var(--border-light);">
-            <button class="ctrl-btn active-low" id="btn-view-2d" onclick="toggleMapView('2d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">2D Blueprint</button>
-            <button class="ctrl-btn" id="btn-view-3d" onclick="toggleMapView('3d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">3D Model</button>
+            <button class="ctrl-btn active-low" id="btn-view-2d" onclick="toggleMapView('2d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Switch to 2D Map View" aria-pressed="true">2D Blueprint</button>
+            <button class="ctrl-btn" id="btn-view-3d" onclick="toggleMapView('3d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Switch to 3D Map View" aria-pressed="false">3D Model</button>
           </div>
         </div>
 
         <!-- Dynamic 3D Isometric Stadium Map -->
         <div class="map-box">
           <div id="three-container" class="hidden" style="width:100%; height:100%;"></div>
-          <svg class="map-svg" viewBox="0 0 450 450" id="stadium-map">
+          <svg class="map-svg" viewBox="0 0 450 450" id="stadium-map" role="img" aria-labelledby="fan-map-title fan-map-desc">
+            <title id="fan-map-title">Fan stadium navigation map</title>
+            <desc id="fan-map-desc">Interactive stadium map showing transit, rideshare, gates, sections, and the active route path.</desc>
             <!-- 3D Stadium Rings (Perspective Layers) -->
             <ellipse cx="200" cy="180" rx="140" ry="70" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="6" />
             <ellipse cx="200" cy="205" rx="110" ry="55" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="4" />
@@ -200,7 +203,7 @@
 
         <!-- Chat Container -->
         <div class="chat-container">
-          <div class="chat-messages" id="chat-messages">
+          <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions">
             <div class="chat-bubble assistant">
               Hello! I am Nexus26, your AI assistant. You can speak to me or type your request (e.g. "I want to go to Section 102").
             </div>

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Venue command dashboard for FIFA World Cup 2026 live sensor monitoring, incident dispatch, emergency broadcasts, and operations AI queries.">
   <title>Nexus26 — Venue Command Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +29,7 @@
       </button>
       <div class="conn-status">
         <span class="status-dot" id="ws-status"></span>
-        <span id="ws-text">Connecting...</span>
+        <span id="ws-text" role="status" aria-live="polite">Connecting...</span>
       </div>
     </div>
   </header>
@@ -37,7 +38,7 @@
   <div class="api-key-drawer hidden" id="api-key-drawer">
     <span class="drawer-title">Gemini API Key Manager</span>
     <div class="drawer-controls">
-      <input type="password" id="drawer-api-key" aria-label="Drawer Gemini API Key" placeholder="Enter GEMINI_API_KEY here..." />
+      <input type="password" id="drawer-api-key" aria-label="Drawer Gemini API Key" autocomplete="off" placeholder="Enter GEMINI_API_KEY here..." />
       <button class="btn btn-primary" onclick="saveDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Save</button>
       <button class="btn btn-secondary" onclick="clearDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Clear</button>
     </div>
@@ -76,20 +77,22 @@
         <!-- Visual Map Layer Selector & View Toggle -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
           <div class="layer-selector" style="display:flex; gap:0.25rem; background:rgba(255,255,255,0.04); padding:0.15rem; border-radius:4px; border:1px solid var(--border-light);">
-            <button class="ctrl-btn active-low" id="layer-btn-crowd" onclick="setMapLayer('crowd')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Show Crowd Layer Heatmap">Crowd</button>
-            <button class="ctrl-btn" id="layer-btn-waste" onclick="setMapLayer('waste')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Show Waste Layer Heatmap">Waste</button>
-            <button class="ctrl-btn" id="layer-btn-security" onclick="setMapLayer('security')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Show Security Layer Heatmap">Security</button>
+            <button class="ctrl-btn active-low" id="layer-btn-crowd" onclick="setMapLayer('crowd')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Show Crowd Layer Heatmap" aria-pressed="true">Crowd</button>
+            <button class="ctrl-btn" id="layer-btn-waste" onclick="setMapLayer('waste')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Show Waste Layer Heatmap" aria-pressed="false">Waste</button>
+            <button class="ctrl-btn" id="layer-btn-security" onclick="setMapLayer('security')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Show Security Layer Heatmap" aria-pressed="false">Security</button>
           </div>
           <div class="layer-selector" style="display:flex; gap:0.25rem; background:rgba(255,255,255,0.04); padding:0.15rem; border-radius:4px; border:1px solid var(--border-light);">
-            <button class="ctrl-btn active-low" id="btn-view-2d" onclick="toggleMapView('2d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Switch to 2D Map View">2D Blueprint</button>
-            <button class="ctrl-btn" id="btn-view-3d" onclick="toggleMapView('3d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Switch to 3D Map View">3D Model</button>
+            <button class="ctrl-btn active-low" id="btn-view-2d" onclick="toggleMapView('2d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Switch to 2D Map View" aria-pressed="true">2D Blueprint</button>
+            <button class="ctrl-btn" id="btn-view-3d" onclick="toggleMapView('3d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Switch to 3D Map View" aria-pressed="false">3D Model</button>
           </div>
         </div>
 
         <!-- SVG 3D Isometric Heatmap -->
         <div class="heatmap-card">
           <div id="three-container" class="hidden" style="width:100%; height:100%;"></div>
-          <svg class="map-svg" viewBox="0 0 450 450" id="stadium-heatmap">
+          <svg class="map-svg" viewBox="0 0 450 450" id="stadium-heatmap" role="img" aria-labelledby="command-map-title command-map-desc">
+            <title id="command-map-title">Command center stadium heatmap</title>
+            <desc id="command-map-desc">Operations map showing gate congestion, transit and rideshare nodes, and incident section highlights.</desc>
             <!-- 3D Stadium Rings (Perspective Layers) -->
             <ellipse cx="200" cy="180" rx="140" ry="70" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="6" />
             <ellipse cx="200" cy="205" rx="110" ry="55" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="4" />
@@ -225,7 +228,7 @@
           <span class="key-status-label status-configured" id="agent-mode">GEMINI ACTIVE</span>
         </div>
         
-        <div class="console-messages" id="console-messages">
+        <div class="console-messages" id="console-messages" role="log" aria-live="polite" aria-relevant="additions">
           <div class="console-bubble assistant">
             <pre>COMMAND INTEL ACTIVE. Ask me anything about current operations, or command a dispatch:
 - "Which gates are congested?"
@@ -249,7 +252,7 @@
       </div>
       <div class="panel-body" style="gap: 1rem;">
         <!-- Alerts Log Feed -->
-        <div class="alerts-list" id="alerts-list">
+        <div class="alerts-list" id="alerts-list" role="log" aria-live="polite" aria-relevant="additions">
           <!-- Populated dynamically -->
         </div>
 
