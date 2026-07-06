@@ -1,11 +1,11 @@
 /* Clean, High-Contrast 3-4 Primary Color Design System */
 :root {
-  --bg-dark: #0f172a;      /* Primary 1: Deep Slate Navy */
-  --bg-card: #1e293b;      /* Primary 2: Muted Card Slate */
-  --accent-cyan: #06b6d4;  /* Primary 3: Vibrant Cyan Accent */
-  --status-red: #ef4444;   /* Primary 4: Crimson Alert */
+  --bg-dark: #0f172a; /* Primary 1: Deep Slate Navy */
+  --bg-card: #1e293b; /* Primary 2: Muted Card Slate */
+  --accent-cyan: #06b6d4; /* Primary 3: Vibrant Cyan Accent */
+  --status-red: #ef4444; /* Primary 4: Crimson Alert */
   --status-green: #10b981; /* Status: Emerald Green */
-  
+
   --text-primary: #f8fafc;
   --text-muted: #94a3b8;
   --border-light: rgba(255, 255, 255, 0.08);
@@ -86,7 +86,10 @@ body {
 
 .portal-stars {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
   background-size: 24px 24px;
   opacity: 0.3;
@@ -239,7 +242,9 @@ body {
   border-radius: 12px;
   position: relative;
   overflow: hidden;
-  transition: transform 0.3s, border-color 0.3s;
+  transition:
+    transform 0.3s,
+    border-color 0.3s;
 }
 
 .surface-card:hover {
@@ -347,7 +352,6 @@ body {
   z-index: 10;
 }
 
-
 /* ========================================== */
 /* Common Application / Surface Styles        */
 /* ========================================== */
@@ -402,7 +406,8 @@ body {
 }
 
 .status-dot {
-  width: 8px; height: 8px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--status-red);
 }
@@ -410,7 +415,6 @@ body {
 .status-dot.connected {
   background: var(--status-green);
 }
-
 
 /* ========================================== */
 /* Fan view Interface (Mobile viewport frame)  */
@@ -440,9 +444,11 @@ body {
 .mobile-frame::before {
   content: '';
   position: absolute;
-  top: 0; left: 50%;
+  top: 0;
+  left: 50%;
   transform: translateX(-50%);
-  width: 140px; height: 24px;
+  width: 140px;
+  height: 24px;
   background: #1e293b;
   border-bottom-left-radius: 14px;
   border-bottom-right-radius: 14px;
@@ -470,7 +476,7 @@ body {
 
 .lang-selector {
   display: flex;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-light);
   border-radius: 6px;
   padding: 0.15rem;
@@ -513,7 +519,7 @@ body {
 
 /* Interactive SVG Map Box */
 .map-box {
-  background: rgba(0,0,0,0.25);
+  background: rgba(0, 0, 0, 0.25);
   border: 1px solid var(--border-light);
   border-radius: 12px;
   height: 240px;
@@ -533,7 +539,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 0.75rem;
@@ -594,7 +600,7 @@ body {
 
 .chat-input-row input {
   flex: 1;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--border-light);
   color: #fff;
   border-radius: 6px;
@@ -608,7 +614,7 @@ body {
 }
 
 .send-btn {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border-light);
   color: #fff;
   padding: 0 1rem;
@@ -713,7 +719,6 @@ body {
   line-height: 1.35;
 }
 
-
 /* ========================================== */
 /* Command Center Dashboard Layout            */
 /* ========================================== */
@@ -767,7 +772,7 @@ body {
 
 /* Left Panel: SVG Heatmap Container */
 .heatmap-card {
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border-light);
   border-radius: 8px;
   height: 280px;
@@ -782,7 +787,7 @@ body {
 }
 
 .gate-sensor-row {
-  background: rgba(255,255,255,0.01);
+  background: rgba(255, 255, 255, 0.01);
   border: 1px solid var(--border-light);
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
@@ -807,7 +812,7 @@ body {
 }
 
 .ctrl-btn {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-light);
   color: #fff;
   padding: 0.25rem 0.5rem;
@@ -817,9 +822,21 @@ body {
   transition: all 0.2s;
 }
 
-.ctrl-btn.active-low { background: rgba(16, 185, 129, 0.15); color: var(--status-green); border-color: var(--status-green); }
-.ctrl-btn.active-high { background: rgba(255, 122, 0, 0.15); color: #ff7a00; border-color: #ff7a00; }
-.ctrl-btn.active-critical { background: rgba(239, 68, 68, 0.15); color: var(--status-red); border-color: var(--status-red); }
+.ctrl-btn.active-low {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--status-green);
+  border-color: var(--status-green);
+}
+.ctrl-btn.active-high {
+  background: rgba(255, 122, 0, 0.15);
+  color: #ff7a00;
+  border-color: #ff7a00;
+}
+.ctrl-btn.active-critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--status-red);
+  border-color: var(--status-red);
+}
 
 /* Center Panel: Large Agent Console */
 .command-console-wrapper {
@@ -832,7 +849,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: rgba(0,0,0,0.15);
+  background: rgba(0, 0, 0, 0.15);
   border: 1px solid var(--border-light);
   border-radius: 12px;
   padding: 1.25rem;
@@ -883,7 +900,7 @@ body {
 
 .console-input-row input {
   flex: 1;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--border-light);
   color: #fff;
   border-radius: 6px;
@@ -905,7 +922,7 @@ body {
 }
 
 .alert-item {
-  background: rgba(255,255,255,0.01);
+  background: rgba(255, 255, 255, 0.01);
   border: 1px solid var(--border-light);
   border-radius: 8px;
   padding: 0.75rem;
@@ -951,10 +968,22 @@ body {
   font-weight: 700;
 }
 
-.alert-badge.danger { background: rgba(239, 68, 68, 0.15); color: var(--status-red); }
-.alert-badge.warning { background: rgba(255,122,0,0.15); color: #ff7a00; }
-.alert-badge.info { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); }
-.alert-badge.success { background: rgba(16, 185, 129, 0.15); color: var(--status-green); }
+.alert-badge.danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--status-red);
+}
+.alert-badge.warning {
+  background: rgba(255, 122, 0, 0.15);
+  color: #ff7a00;
+}
+.alert-badge.info {
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--accent-cyan);
+}
+.alert-badge.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--status-green);
+}
 
 .alert-text {
   font-size: 0.8rem;
@@ -1232,9 +1261,15 @@ body {
   font-family: var(--font-code);
 }
 
-.kpi-value.critical { color: var(--status-red); }
-.kpi-value.warning { color: #ff7a00; }
-.kpi-value.stable { color: var(--status-green); }
+.kpi-value.critical {
+  color: var(--status-red);
+}
+.kpi-value.warning {
+  color: #ff7a00;
+}
+.kpi-value.stable {
+  color: var(--status-green);
+}
 
 /* Preset Scenario Button Layout */
 .preset-grid {
@@ -1261,4 +1296,3 @@ body {
   background: var(--accent-cyan);
   color: #0f172a;
 }
-

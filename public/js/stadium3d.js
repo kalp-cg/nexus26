@@ -88,7 +88,7 @@ class Stadium3D {
       color: 0x1e293b,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.2
+      opacity: 0.2,
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = Math.PI / 2;
@@ -107,7 +107,7 @@ class Stadium3D {
     const pitchMat = new THREE.MeshStandardMaterial({
       color: 0x10b981, // Emerald Green
       roughness: 0.8,
-      metalness: 0.1
+      metalness: 0.1,
     });
     const pitch = new THREE.Mesh(pitchGeo, pitchMat);
     pitch.rotation.x = -Math.PI / 2;
@@ -134,7 +134,7 @@ class Stadium3D {
         side: THREE.DoubleSide,
         roughness: 0.5,
         transparent: true,
-        opacity: 0.85
+        opacity: 0.85,
       });
       const mesh = new THREE.Mesh(geom, mat);
       mesh.position.y = yPos;
@@ -172,7 +172,7 @@ class Stadium3D {
     const mapCoord = (x, y) => {
       return {
         x: (x - 225) * 0.75,
-        z: (y - 225) * 0.75
+        z: (y - 225) * 0.75,
       };
     };
 
@@ -206,23 +206,20 @@ class Stadium3D {
     const gatesData = [
       { id: 'A1', x: 100, y: 160 },
       { id: 'A2', x: 300, y: 100 },
-      { id: 'B1', x: 200, y: 300 }
+      { id: 'B1', x: 200, y: 300 },
     ];
 
-    gatesData.forEach(gate => {
+    gatesData.forEach((gate) => {
       const pos = this.mapSVGTo3D(gate.x, gate.y);
       const floatHeight = 25;
 
       // 1. Dashed coordinate support line to ground
-      const linePoints = [
-        new THREE.Vector3(pos.x, 0.1, pos.z),
-        new THREE.Vector3(pos.x, floatHeight, pos.z)
-      ];
+      const linePoints = [new THREE.Vector3(pos.x, 0.1, pos.z), new THREE.Vector3(pos.x, floatHeight, pos.z)];
       const lineGeo = new THREE.BufferGeometry().setFromPoints(linePoints);
       const lineMat = new THREE.LineDashedMaterial({
         color: 0x64748b,
         dashSize: 4,
-        gapSize: 3
+        gapSize: 3,
       });
       const supportLine = new THREE.Line(lineGeo, lineMat);
       supportLine.computeLineDistances();
@@ -231,7 +228,12 @@ class Stadium3D {
 
       // 2. Base ground circle indicator
       const baseGeo = new THREE.RingGeometry(0, 5, 16);
-      const baseMat = new THREE.MeshBasicMaterial({ color: 0x475569, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+      const baseMat = new THREE.MeshBasicMaterial({
+        color: 0x475569,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.5,
+      });
       const base = new THREE.Mesh(baseGeo, baseMat);
       base.rotation.x = -Math.PI / 2;
       base.position.set(pos.x, 0.2, pos.z);
@@ -244,7 +246,7 @@ class Stadium3D {
         roughness: 0.1,
         metalness: 0.9,
         emissive: 0x10b981,
-        emissiveIntensity: 0.2
+        emissiveIntensity: 0.2,
       });
       const sphere = new THREE.Mesh(sphereGeo, sphereMat);
       sphere.position.set(pos.x, floatHeight, pos.z);
@@ -259,7 +261,7 @@ class Stadium3D {
     return {
       x: (svgX - 225) * 0.75,
       z: (svgY - 225) * 0.75,
-      y: svgHeight
+      y: svgHeight,
     };
   }
 
@@ -318,7 +320,7 @@ class Stadium3D {
     const tubeMat = new THREE.MeshBasicMaterial({
       color: rerouted ? 0xef4444 : 0x06b6d4, // Red or Cyan
       transparent: true,
-      opacity: 0.85
+      opacity: 0.85,
     });
 
     this.pathMesh = new THREE.Mesh(tubeGeo, tubeMat);
@@ -351,7 +353,7 @@ class Stadium3D {
       if (this.pulseScale > 1.3) this.pulseDir = -1;
       if (this.pulseScale < 0.9) this.pulseDir = 1;
 
-      Object.keys(this.gateSpheres).forEach(gateId => {
+      Object.keys(this.gateSpheres).forEach((gateId) => {
         const sphere = this.gateSpheres[gateId];
         // Check if gate is red (critical)
         if (sphere && sphere.material.color.getHexString() === 'ef4444') {

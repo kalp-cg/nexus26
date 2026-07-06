@@ -55,7 +55,10 @@ function loadSavedApiKey() {
   if (key) {
     appendChatBubble('assistant', 'Gemini API Key configured. Live AI wayfinding & tools active.');
   } else {
-    appendChatBubble('assistant', 'Fallback Mock-Agent active. Entering Section numbers (e.g. "Section 102") will trigger simulated routes.');
+    appendChatBubble(
+      'assistant',
+      'Fallback Mock-Agent active. Entering Section numbers (e.g. "Section 102") will trigger simulated routes.'
+    );
   }
 }
 
@@ -98,37 +101,43 @@ function connectWebSocket() {
       console.log('[WS] Received message:', msg);
 
       switch (msg.type) {
-      case 'SENSOR_UPDATE':
-        updateGateVisuals(msg.data.gates);
+        case 'SENSOR_UPDATE':
+          updateGateVisuals(msg.data.gates);
 
-        // Auto-retrigger route check if active route is blocked by gate critical spike
-        if (activePathData) {
-          const activeGate = msg.data.gates.find(g => g.gate_id === activePathData.gate_used);
-          if (activeGate && activeGate.congestion_level === 'critical') {
-            showSystemAlertBanner(`Active Route Warning: Gate ${activePathData.gate_used} has spiked to critical congestion. Rerouting path automatically.`, 'critical');
-            recalculateActiveRoute();
+          // Auto-retrigger route check if active route is blocked by gate critical spike
+          if (activePathData) {
+            const activeGate = msg.data.gates.find((g) => g.gate_id === activePathData.gate_used);
+            if (activeGate && activeGate.congestion_level === 'critical') {
+              showSystemAlertBanner(
+                `Active Route Warning: Gate ${activePathData.gate_used} has spiked to critical congestion. Rerouting path automatically.`,
+                'critical'
+              );
+              recalculateActiveRoute();
+            }
           }
-        }
-        break;
-      case 'REROUTE_FAN':
-        drawReroute(msg.data);
-        break;
-      case 'EMERGENCY_BROADCAST':
-        showSystemAlertBanner(`Emergency Broadcast: ${msg.data.message}`, 'critical');
-        appendChatBubble('assistant', `Emergency Notice: ${msg.data.message}`);
-        speakResponse(`Attention, safety broadcast: ${msg.data.message}`);
-        break;
-      case 'RESET_SYSTEM':
-        updateGateVisuals(msg.data.sensors.gates);
-        clearRoute();
-        dismissAlertBanner();
-        appendChatBubble('tool-notification', 'System metrics reset to baseline. Active paths cleared.');
-        break;
-      case 'DISPATCH_VOLUNTEER':
-        if (activePathData && activePathData.gate_used === msg.data.zone) {
-          appendChatBubble('assistant', `Operational Alert: A service volunteer (${msg.data.assigned_volunteer}) has been dispatched to your area to assist with crowd operations.`);
-        }
-        break;
+          break;
+        case 'REROUTE_FAN':
+          drawReroute(msg.data);
+          break;
+        case 'EMERGENCY_BROADCAST':
+          showSystemAlertBanner(`Emergency Broadcast: ${msg.data.message}`, 'critical');
+          appendChatBubble('assistant', `Emergency Notice: ${msg.data.message}`);
+          speakResponse(`Attention, safety broadcast: ${msg.data.message}`);
+          break;
+        case 'RESET_SYSTEM':
+          updateGateVisuals(msg.data.sensors.gates);
+          clearRoute();
+          dismissAlertBanner();
+          appendChatBubble('tool-notification', 'System metrics reset to baseline. Active paths cleared.');
+          break;
+        case 'DISPATCH_VOLUNTEER':
+          if (activePathData && activePathData.gate_used === msg.data.zone) {
+            appendChatBubble(
+              'assistant',
+              `Operational Alert: A service volunteer (${msg.data.assigned_volunteer}) has been dispatched to your area to assist with crowd operations.`
+            );
+          }
+          break;
       }
     } catch (err) {
       console.error('[WS] Error processing message:', err);
@@ -138,7 +147,7 @@ function connectWebSocket() {
 
 // Update SVG Gate Colors
 function updateGateVisuals(gates) {
-  gates.forEach(gate => {
+  gates.forEach((gate) => {
     const circle = document.getElementById(`circle-gate-${gate.gate_id}`);
     if (circle) {
       if (gate.congestion_level === 'critical') {
@@ -159,7 +168,7 @@ function updateGateVisuals(gates) {
 
   // Update 3D model gate markers if initialized
   if (stadium3d) {
-    gates.forEach(gate => {
+    gates.forEach((gate) => {
       stadium3d.setGateCongestion(gate.gate_id, gate.congestion_level);
     });
   }
@@ -168,7 +177,7 @@ function updateGateVisuals(gates) {
 // Toggle language
 function setLanguage(lang) {
   currentLanguage = lang;
-  document.querySelectorAll('.lang-btn').forEach(btn => {
+  document.querySelectorAll('.lang-btn').forEach((btn) => {
     btn.classList.remove('active');
     btn.setAttribute('aria-pressed', 'false');
     if (btn.textContent.toLowerCase() === lang) {
@@ -181,7 +190,7 @@ function setLanguage(lang) {
     en: 'Language set to English. How can I help you find your seat?',
     es: 'Idioma cambiado a Español. ¿Cómo puedo ayudarte a encontrar tu sección?',
     fr: 'Langue configurée en Français. Comment puis-je vous aider à trouver votre place ?',
-    de: 'Sprache auf Deutsch eingestellt. Wie kann ich Ihnen helfen, Ihren Sitzplatz zu finden?'
+    de: 'Sprache auf Deutsch eingestellt. Wie kann ich Ihnen helfen, Ihren Sitzplatz zu finden?',
   };
 
   appendChatBubble('assistant', greetings[lang]);
@@ -345,14 +354,20 @@ function speakResponse(text) {
   const targetLocale = locales[currentLanguage] || 'en';
 
   const voices = window.speechSynthesis.getVoices();
-  const matchedVoice = voices.find(v => v.lang.startsWith(targetLocale));
+  const matchedVoice = voices.find((v) => v.lang.startsWith(targetLocale));
   if (matchedVoice) {
     utterance.voice = matchedVoice;
   }
 
-  utterance.onstart = () => { isSpeaking = true; };
-  utterance.onend = () => { isSpeaking = false; };
-  utterance.onerror = () => { isSpeaking = false; };
+  utterance.onstart = () => {
+    isSpeaking = true;
+  };
+  utterance.onend = () => {
+    isSpeaking = false;
+  };
+  utterance.onerror = () => {
+    isSpeaking = false;
+  };
 
   window.speechSynthesis.speak(utterance);
 }
@@ -370,11 +385,11 @@ async function queryAssistant(messageText) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: messageText,
-        history: chatHistory.filter(h => h.role !== 'tool-notification'),
+        history: chatHistory.filter((h) => h.role !== 'tool-notification'),
         userApiKey: apiKey,
         current_location: currentPinCoords,
-        accessibility_enabled: accessibilityEnabled
-      })
+        accessibility_enabled: accessibilityEnabled,
+      }),
     });
 
     const result = await response.json();
@@ -387,7 +402,6 @@ async function queryAssistant(messageText) {
 
     appendChatBubble('assistant', result.text);
     speakResponse(result.text);
-
   } catch (err) {
     console.error('Error querying assistant:', err);
     appendChatBubble('assistant', 'Communication error. Please check your network or try again.');
@@ -411,8 +425,8 @@ async function recalculateActiveRoute() {
         history: [],
         userApiKey: apiKey,
         current_location: activePathData.path[0],
-        accessibility_enabled: accessibilityEnabled
-      })
+        accessibility_enabled: accessibilityEnabled,
+      }),
     });
     const result = await response.json();
     console.log('[Recalculated Route Response]', result);

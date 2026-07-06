@@ -84,7 +84,7 @@ const sanitizeChatHistory = (history) => {
   }
   return history.map((item) => ({
     role: sanitizeInput(item && item.role),
-    content: sanitizeInput(item && item.content)
+    content: sanitizeInput(item && item.content),
   }));
 };
 
@@ -104,12 +104,12 @@ app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "font-src 'self' https://fonts.gstatic.com; " +
-    "connect-src 'self' ws: wss: https://generativelanguage.googleapis.com; " +
-    "img-src 'self' data:; " +
-    "frame-ancestors 'none';"
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com; " +
+      "connect-src 'self' ws: wss: https://generativelanguage.googleapis.com; " +
+      "img-src 'self' data:; " +
+      "frame-ancestors 'none';"
   );
   next();
 });
@@ -119,11 +119,7 @@ app.use((req, res, next) => {
  * Allows the Render deployment and localhost development origins.
  */
 app.use((req, res, next) => {
-  const allowedOrigins = [
-    'https://nexus26.onrender.com',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000'
-  ];
+  const allowedOrigins = ['https://nexus26.onrender.com', 'http://localhost:3000', 'http://127.0.0.1:3000'];
   const origin = req.headers.origin;
   if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -149,11 +145,11 @@ app.use((req, res, next) => {
   if (!ipRequestCounts[ip]) {
     ipRequestCounts[ip] = [];
   }
-  ipRequestCounts[ip] = ipRequestCounts[ip].filter(t => now - t < 60000);
+  ipRequestCounts[ip] = ipRequestCounts[ip].filter((t) => now - t < 60000);
   if (ipRequestCounts[ip].length >= 180) {
     return res.status(429).json({
       error: 'Too many requests. Please try again in a moment.',
-      retryAfter: 60
+      retryAfter: 60,
     });
   }
   ipRequestCounts[ip].push(now);
@@ -234,7 +230,7 @@ app.post('/api/sensors/update', (req, res) => {
   const sensorData = readJSON('gate_sensors.json');
   if (!sensorData) return res.status(500).json({ error: 'Failed to read sensor data' });
 
-  const gate = sensorData.gates.find(g => g.gate_id === gate_id);
+  const gate = sensorData.gates.find((g) => g.gate_id === gate_id);
   if (!gate) return res.status(404).json({ error: `Gate '${gate_id}' not found` });
 
   if (congestion_level) gate.congestion_level = congestion_level;
@@ -279,7 +275,7 @@ app.post('/api/transit/update', (req, res) => {
   const transitData = readJSON('transit_feeds.json');
   if (!transitData) return res.status(500).json({ error: 'Failed to read transit data' });
 
-  const matchedLine = transitData.lines.find(l => l.line === line);
+  const matchedLine = transitData.lines.find((l) => l.line === line);
   if (!matchedLine) {
     return res.status(404).json({ error: `Line '${line}' not found` });
   }
@@ -319,7 +315,7 @@ app.post('/api/reports', (req, res) => {
     text_raw: text_raw || 'No details provided',
     timestamp: new Date().toISOString(),
     status: 'open',
-    assigned_volunteer: null
+    assigned_volunteer: null,
   };
 
   reports.unshift(newReport);
@@ -344,7 +340,7 @@ app.post('/api/dispatch', (req, res) => {
   const reports = readJSON('volunteer_reports.json');
   if (!reports) return res.status(500).json({ error: 'Failed to read reports' });
 
-  const report = reports.find(r => r.report_id === report_id);
+  const report = reports.find((r) => r.report_id === report_id);
   if (!report) return res.status(404).json({ error: `Report '${report_id}' not found` });
 
   const volunteers = ['Dave (Section 104)', 'Maria (Gate A2)', 'Carlos (Transit Hub)', 'Alex (Section 118)'];
@@ -370,27 +366,29 @@ app.post('/api/reset', (req, res) => {
     gates: [
       { gate_id: 'A1', capacity: 4000, current_count: 1200, congestion_level: 'low', avg_wait_min: 3 },
       { gate_id: 'A2', capacity: 4000, current_count: 1100, congestion_level: 'low', avg_wait_min: 3 },
-      { gate_id: 'B1', capacity: 3500, current_count: 1500, congestion_level: 'low', avg_wait_min: 4 }
-    ]
+      { gate_id: 'B1', capacity: 3500, current_count: 1500, congestion_level: 'low', avg_wait_min: 4 },
+    ],
   };
 
-  const defaultReports = [{
-    report_id: 'VR-1042',
-    volunteer_id: 'V-118',
-    zone: 'North Concourse',
-    issue_type: 'overflowing_bin',
-    text_raw: 'Bins near section 118 are overflowing, getting messy',
-    timestamp: new Date().toISOString(),
-    status: 'open',
-    assigned_volunteer: null
-  }];
+  const defaultReports = [
+    {
+      report_id: 'VR-1042',
+      volunteer_id: 'V-118',
+      zone: 'North Concourse',
+      issue_type: 'overflowing_bin',
+      text_raw: 'Bins near section 118 are overflowing, getting messy',
+      timestamp: new Date().toISOString(),
+      status: 'open',
+      assigned_volunteer: null,
+    },
+  ];
 
   const defaultTransit = {
     city: 'Inglewood, CA',
     lines: [
       { line: 'K Line', status: 'on_time', delay_min: 0, next_departure: '21:26' },
-      { line: 'Shuttle Bus 3', status: 'on_time', next_departure: '21:18' }
-    ]
+      { line: 'Shuttle Bus 3', status: 'on_time', next_departure: '21:18' },
+    ],
   };
 
   localWriteJSON('gate_sensors.json', defaultSensors);
@@ -398,7 +396,10 @@ app.post('/api/reset', (req, res) => {
   localWriteJSON('transit_feeds.json', defaultTransit);
 
   log('INFO', 'RESET', 'Data reset to baseline settings');
-  broadcast({ type: 'RESET_SYSTEM', data: { sensors: defaultSensors, reports: defaultReports, transit: defaultTransit } });
+  broadcast({
+    type: 'RESET_SYSTEM',
+    data: { sensors: defaultSensors, reports: defaultReports, transit: defaultTransit },
+  });
   res.json({ success: true });
 });
 
@@ -424,7 +425,9 @@ app.post('/api/chat/:persona', async (req, res) => {
     return res.status(404).json({ error: `Persona '${persona}' is not supported` });
   }
   if (!message || message.length > MAX_CHAT_MESSAGE_LENGTH) {
-    return res.status(400).json({ error: `message is required and must be ${MAX_CHAT_MESSAGE_LENGTH} characters or fewer` });
+    return res
+      .status(400)
+      .json({ error: `message is required and must be ${MAX_CHAT_MESSAGE_LENGTH} characters or fewer` });
   }
 
   const activeKey = userApiKey || process.env.GEMINI_API_KEY;
@@ -437,7 +440,14 @@ app.post('/api/chat/:persona', async (req, res) => {
 
   if (activeKey) {
     try {
-      const responseText = await runGeminiAgent(persona, message, sanitizedHistory, activeKey, current_location, accessibility_enabled);
+      const responseText = await runGeminiAgent(
+        persona,
+        message,
+        sanitizedHistory,
+        activeKey,
+        current_location,
+        accessibility_enabled
+      );
       return res.json({ text: responseText, mode: 'gemini' });
     } catch (err) {
       log('ERROR', 'API', `Gemini API Error: ${err.message}. Falling back.`);
@@ -454,7 +464,7 @@ app.use((req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
     path: req.originalUrl,
-    method: req.method
+    method: req.method,
   });
 });
 
@@ -465,7 +475,7 @@ app.use((err, req, res, next) => {
   log('ERROR', 'SYSTEM', `Unhandled server error: ${err.message}`);
   const status = err.status || 500;
   res.status(status).json({
-    error: status === 500 ? 'Internal server error' : err.message
+    error: status === 500 ? 'Internal server error' : err.message,
   });
 });
 

@@ -5,6 +5,7 @@ This compliance manual defines standard operating procedures (SOPs) for SoFi Sta
 ---
 
 ## 1. Crowd Management and Gate SOPs
+
 - **Capacity Thresholds**: Gates are designed for a maximum throughput of 4,000 fans per hour.
 - **Congestion Classification**:
   - **Low**: Count < 1,500/hr. Wait time < 5 min.
@@ -16,6 +17,7 @@ This compliance manual defines standard operating procedures (SOPs) for SoFi Sta
 ---
 
 ## 2. Waste and Sustainability SOPs
+
 - **Waste Bin Monitoring**: Overflowing bins present safety and environmental compliance hazards. Bins must be emptied within 15 minutes of an alert.
 - **Issue Classification**:
   - Classification is automated by volunteer report intake.
@@ -25,5 +27,6 @@ This compliance manual defines standard operating procedures (SOPs) for SoFi Sta
 ---
 
 ## 3. Accessibility SOPs
+
 - **Ramp Compliance**: Ramps must be kept clear of congestion at all times.
 - **Assistance Dispatch**: If a fan requests accessibility assistance at a congested gate (e.g., Gate A1 has no ramp), operations must dispatch a mobility assistant to guide them to Gate A2 or Gate B1 which are equipped with compliant ramps.

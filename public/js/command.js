@@ -75,52 +75,54 @@ function connectWebSocket() {
       console.log('[WS] Received message:', msg);
 
       switch (msg.type) {
-      case 'SENSOR_UPDATE':
-        updateHeatmapVisuals(msg.data.gates);
-        updateTestBenchCounters(msg.data.gates);
-        // Check if any gates just crossed into critical and push an operational alert
-        msg.data.gates.forEach(gate => {
-          if (gate.congestion_level === 'critical') {
-            pushSystemAlert(`Gate ${gate.gate_id} count surge (${gate.current_count}/hr). Wait time: ${gate.avg_wait_min}m.`);
+        case 'SENSOR_UPDATE':
+          updateHeatmapVisuals(msg.data.gates);
+          updateTestBenchCounters(msg.data.gates);
+          // Check if any gates just crossed into critical and push an operational alert
+          msg.data.gates.forEach((gate) => {
+            if (gate.congestion_level === 'critical') {
+              pushSystemAlert(
+                `Gate ${gate.gate_id} count surge (${gate.current_count}/hr). Wait time: ${gate.avg_wait_min}m.`
+              );
+            }
+          });
+          updateKpiStats();
+          break;
+        case 'NEW_REPORT':
+          activeReports.unshift(msg.data);
+          prependAlertToFeed(msg.data);
+          updateAlertCounter();
+          refreshMapLayerHighlights();
+          updateKpiStats();
+          break;
+        case 'DISPATCH_VOLUNTEER': {
+          const rep = activeReports.find((x) => x.report_id === msg.data.report_id);
+          if (rep) {
+            rep.status = msg.data.status;
+            rep.assigned_volunteer = msg.data.assigned_volunteer;
           }
-        });
-        updateKpiStats();
-        break;
-      case 'NEW_REPORT':
-        activeReports.unshift(msg.data);
-        prependAlertToFeed(msg.data);
-        updateAlertCounter();
-        refreshMapLayerHighlights();
-        updateKpiStats();
-        break;
-      case 'DISPATCH_VOLUNTEER': {
-        const rep = activeReports.find(x => x.report_id === msg.data.report_id);
-        if (rep) {
-          rep.status = msg.data.status;
-          rep.assigned_volunteer = msg.data.assigned_volunteer;
+          updateAlertDispatchStatus(msg.data);
+          updateAlertCounter();
+          refreshMapLayerHighlights();
+          updateKpiStats();
+          break;
         }
-        updateAlertDispatchStatus(msg.data);
-        updateAlertCounter();
-        refreshMapLayerHighlights();
-        updateKpiStats();
-        break;
-      }
-      case 'EMERGENCY_BROADCAST':
-        appendConsoleBubble('assistant', `EMERGENCY ALERT BROADCASTED: "${msg.data.message}"`);
-        break;
-      case 'TRANSIT_UPDATE':
-        updateKpiStats();
-        break;
-      case 'RESET_SYSTEM':
-        activeReports = msg.data.reports || [];
-        updateHeatmapVisuals(msg.data.sensors.gates);
-        updateTestBenchCounters(msg.data.sensors.gates);
-        loadReportsList(activeReports);
-        updateAlertCounter();
-        refreshMapLayerHighlights();
-        updateKpiStats();
-        appendConsoleBubble('assistant', 'SYSTEM DATA RESET: Baseline operating metrics loaded. Sensors normalized.');
-        break;
+        case 'EMERGENCY_BROADCAST':
+          appendConsoleBubble('assistant', `EMERGENCY ALERT BROADCASTED: "${msg.data.message}"`);
+          break;
+        case 'TRANSIT_UPDATE':
+          updateKpiStats();
+          break;
+        case 'RESET_SYSTEM':
+          activeReports = msg.data.reports || [];
+          updateHeatmapVisuals(msg.data.sensors.gates);
+          updateTestBenchCounters(msg.data.sensors.gates);
+          loadReportsList(activeReports);
+          updateAlertCounter();
+          refreshMapLayerHighlights();
+          updateKpiStats();
+          appendConsoleBubble('assistant', 'SYSTEM DATA RESET: Baseline operating metrics loaded. Sensors normalized.');
+          break;
       }
     } catch (err) {
       console.error('[WS] Error processing message:', err);
@@ -154,7 +156,7 @@ async function fetchInitialData() {
 
 // Update Heatmap colors based on live signals
 function updateHeatmapVisuals(gates) {
-  gates.forEach(gate => {
+  gates.forEach((gate) => {
     const circle = document.getElementById(`hcircle-gate-${gate.gate_id}`);
     if (circle) {
       if (gate.congestion_level === 'critical') {
@@ -176,7 +178,7 @@ function updateHeatmapVisuals(gates) {
 
   // Sync with 3D model gate markers if initialized
   if (stadium3d) {
-    gates.forEach(gate => {
+    gates.forEach((gate) => {
       stadium3d.setGateCongestion(gate.gate_id, gate.congestion_level);
     });
   }
@@ -184,7 +186,7 @@ function updateHeatmapVisuals(gates) {
 
 // Update simulator counters and buttons active state
 function updateTestBenchCounters(gates) {
-  gates.forEach(gate => {
+  gates.forEach((gate) => {
     const countLbl = document.getElementById(`lbl-count-${gate.gate_id}`);
     const waitLbl = document.getElementById(`lbl-wait-${gate.gate_id}`);
     if (countLbl) countLbl.textContent = gate.current_count;
@@ -194,7 +196,7 @@ function updateTestBenchCounters(gates) {
     const row = document.getElementById(`bench-gate-${gate.gate_id}`);
     if (row) {
       const btns = row.querySelectorAll('.ctrl-btn');
-      btns.forEach(btn => {
+      btns.forEach((btn) => {
         btn.classList.remove('active-low', 'active-high', 'active-critical');
         const text = btn.textContent.toLowerCase();
         if (text === 'low' && gate.congestion_level === 'low') btn.classList.add('active-low');
@@ -215,8 +217,8 @@ async function simulateSensor(gateId, level, count, wait) {
         gate_id: gateId,
         congestion_level: level,
         current_count: count,
-        avg_wait_min: wait
-      })
+        avg_wait_min: wait,
+      }),
     });
     const result = await res.json();
     console.log('[Simulator Sensor Update Result]', result);
@@ -230,7 +232,7 @@ async function simulateSensor(gateId, level, count, wait) {
 function loadReportsList(reports) {
   activeReports = reports || [];
   alertsList.innerHTML = '';
-  activeReports.forEach(report => {
+  activeReports.forEach((report) => {
     prependAlertToFeed(report);
   });
   updateAlertCounter();
@@ -264,10 +266,23 @@ function prependAlertToFeed(report) {
   let badgeText = 'report';
   let badgeClass = 'info';
 
-  if (report.issue_type === 'overflowing_bin') { labelPrefix = 'WASTE'; badgeText = 'sustainability'; badgeClass = 'warning'; }
-  else if (report.issue_type === 'crowd_surge') { labelPrefix = 'SURGE'; badgeText = 'crowd surge'; badgeClass = 'danger'; }
-  else if (report.issue_type === 'medical') { labelPrefix = 'MEDICAL'; badgeText = 'medical alert'; badgeClass = 'danger'; }
-  else if (report.issue_type === 'accessibility_blocked') { labelPrefix = 'ACCESS'; badgeText = 'accessibility'; badgeClass = 'warning'; }
+  if (report.issue_type === 'overflowing_bin') {
+    labelPrefix = 'WASTE';
+    badgeText = 'sustainability';
+    badgeClass = 'warning';
+  } else if (report.issue_type === 'crowd_surge') {
+    labelPrefix = 'SURGE';
+    badgeText = 'crowd surge';
+    badgeClass = 'danger';
+  } else if (report.issue_type === 'medical') {
+    labelPrefix = 'MEDICAL';
+    badgeText = 'medical alert';
+    badgeClass = 'danger';
+  } else if (report.issue_type === 'accessibility_blocked') {
+    labelPrefix = 'ACCESS';
+    badgeText = 'accessibility';
+    badgeClass = 'warning';
+  }
 
   item.className = `alert-item ${severityClass}`;
   item.innerHTML = `
@@ -297,7 +312,9 @@ function prependAlertToFeed(report) {
 
 // Push system sensor warning to alerts queue
 function pushSystemAlert(message) {
-  const existingAlert = Array.from(alertsList.querySelectorAll('.alert-text')).some(el => el.textContent.includes(message.substring(0, 30)));
+  const existingAlert = Array.from(alertsList.querySelectorAll('.alert-text')).some((el) =>
+    el.textContent.includes(message.substring(0, 30))
+  );
   if (existingAlert) return;
 
   const item = document.createElement('div');
@@ -345,7 +362,7 @@ async function dispatchVolunteer(reportId) {
     const res = await fetch('/api/dispatch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ report_id: reportId })
+      body: JSON.stringify({ report_id: reportId }),
     });
     const result = await res.json();
     console.log('[Dispatch Result]', result);
@@ -372,7 +389,7 @@ async function submitVolunteerReport() {
     const res = await fetch('/api/reports', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ zone, issue_type, text_raw })
+      body: JSON.stringify({ zone, issue_type, text_raw }),
     });
     const result = await res.json();
     console.log('[Volunteer Report Submit Result]', result);
@@ -404,8 +421,8 @@ async function sendConsoleCommand() {
       body: JSON.stringify({
         message: query,
         history: chatHistory,
-        userApiKey: savedApiKey
-      })
+        userApiKey: savedApiKey,
+      }),
     });
     const result = await res.json();
 
@@ -418,7 +435,6 @@ async function sendConsoleCommand() {
     }
 
     appendConsoleBubble('assistant', result.text);
-
   } catch (err) {
     console.error('Error sending query:', err);
     // Remove loader
@@ -482,13 +498,13 @@ function setMapLayer(layerName) {
 
 function refreshMapLayerHighlights() {
   // Clear existing highlights on section circles
-  document.querySelectorAll('.section-label circle').forEach(circle => {
+  document.querySelectorAll('.section-label circle').forEach((circle) => {
     circle.classList.remove('section-highlight-active', 'section-highlight-warning');
   });
 
   if (activeMapLayer === 'crowd') return; // Rely on gate circles
 
-  activeReports.forEach(report => {
+  activeReports.forEach((report) => {
     if (report.status === 'dispatched') return; // Skip resolved/assigned logs for mapping clutter
 
     const zoneText = report.zone.toLowerCase();
@@ -510,7 +526,12 @@ function refreshMapLayerHighlights() {
         if (circle) {
           if (activeMapLayer === 'waste' && report.issue_type === 'overflowing_bin') {
             circle.classList.add('section-highlight-warning');
-          } else if (activeMapLayer === 'security' && (report.issue_type === 'crowd_surge' || report.issue_type === 'medical' || report.issue_type === 'accessibility_blocked')) {
+          } else if (
+            activeMapLayer === 'security' &&
+            (report.issue_type === 'crowd_surge' ||
+              report.issue_type === 'medical' ||
+              report.issue_type === 'accessibility_blocked')
+          ) {
             circle.classList.add('section-highlight-active');
           }
         }
@@ -534,7 +555,7 @@ async function sendEmergencyBroadcast() {
     const res = await fetch('/api/broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message })
+      body: JSON.stringify({ message }),
     });
     const result = await res.json();
     if (!result.success) {
@@ -564,7 +585,7 @@ async function updateKpiStats() {
     const data = await res.json();
     if (data && data.gates) {
       let totalWait = 0;
-      data.gates.forEach(g => totalWait += g.avg_wait_min);
+      data.gates.forEach((g) => (totalWait += g.avg_wait_min));
       const avg = (totalWait / data.gates.length).toFixed(1);
       waitEl.textContent = `${avg}m avg`;
 
@@ -578,7 +599,7 @@ async function updateKpiStats() {
   }
 
   // 2. Open Incidents KPI
-  const openCount = activeReports.filter(r => r.status !== 'dispatched').length;
+  const openCount = activeReports.filter((r) => r.status !== 'dispatched').length;
   incidentsEl.textContent = `${openCount} Open`;
   incidentsEl.className = 'kpi-value';
   if (openCount > 2) incidentsEl.classList.add('critical');
@@ -586,7 +607,7 @@ async function updateKpiStats() {
   else incidentsEl.classList.add('stable');
 
   // 3. Volunteer headcounts
-  const dispatchedCount = activeReports.filter(r => r.status === 'dispatched').length;
+  const dispatchedCount = activeReports.filter((r) => r.status === 'dispatched').length;
   const available = Math.max(0, 4 - dispatchedCount);
   volunteersEl.textContent = `${available} Available`;
   volunteersEl.className = 'kpi-value';
@@ -598,7 +619,7 @@ async function updateKpiStats() {
     const res = await fetch('/api/transit');
     const data = await res.json();
     if (data && data.lines) {
-      const hasDelay = data.lines.some(l => l.status === 'delayed');
+      const hasDelay = data.lines.some((l) => l.status === 'delayed');
       if (hasDelay) {
         transitEl.textContent = 'Transit Delayed';
         transitEl.className = 'kpi-value warning';
@@ -627,8 +648,8 @@ async function triggerScenario(type) {
         body: JSON.stringify({
           zone: 'Gate A1 Entrance',
           issue_type: 'crowd_surge',
-          text_raw: 'Critical crowd congestion buildup. Dynamic turnstiles experiencing slow read rates.'
-        })
+          text_raw: 'Critical crowd congestion buildup. Dynamic turnstiles experiencing slow read rates.',
+        }),
       });
     } catch (e) {
       console.error(e);
@@ -639,16 +660,18 @@ async function triggerScenario(type) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: 'Gate A1 is CLOSED due to heavy congestion. All ticket holders redirect to Gate A2.'
-        })
+          message: 'Gate A1 is CLOSED due to heavy congestion. All ticket holders redirect to Gate A2.',
+        }),
       });
     } catch (e) {
       console.error(e);
     }
 
-    appendConsoleBubble('assistant', 'Surge Preset executed. Gate A1 red heatmap pulsed, staff logged report, and fan companions rerouted.');
-  }
-  else if (type === 'waste') {
+    appendConsoleBubble(
+      'assistant',
+      'Surge Preset executed. Gate A1 red heatmap pulsed, staff logged report, and fan companions rerouted.'
+    );
+  } else if (type === 'waste') {
     // 1. File overflowing bin report at Section 118
     try {
       await fetch('/api/reports', {
@@ -657,8 +680,8 @@ async function triggerScenario(type) {
         body: JSON.stringify({
           zone: 'North Concourse (S118)',
           issue_type: 'overflowing_bin',
-          text_raw: 'Overflowing recycle bins next to concession stand 4; waste spilling onto concourse corridor.'
-        })
+          text_raw: 'Overflowing recycle bins next to concession stand 4; waste spilling onto concourse corridor.',
+        }),
       });
     } catch (e) {
       console.error(e);
@@ -667,15 +690,17 @@ async function triggerScenario(type) {
     // 2. Switch map layer to show waste alerts
     setMapLayer('waste');
 
-    appendConsoleBubble('assistant', 'Waste Preset executed. Incident ticket queued and map layer auto-switched to highlight Section 118.');
-  }
-  else if (type === 'transit') {
+    appendConsoleBubble(
+      'assistant',
+      'Waste Preset executed. Incident ticket queued and map layer auto-switched to highlight Section 118.'
+    );
+  } else if (type === 'transit') {
     // 1. Delay subway line K
     try {
       await fetch('/api/transit/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ line: 'K Line', status: 'delayed', delay_min: 25 })
+        body: JSON.stringify({ line: 'K Line', status: 'delayed', delay_min: 25 }),
       });
     } catch (e) {
       console.error(e);
@@ -688,8 +713,8 @@ async function triggerScenario(type) {
         body: JSON.stringify({
           zone: 'Transit Hub',
           issue_type: 'other',
-          text_raw: 'Inglewood subway Line K delayed 25m. Transit staff coordinating additional bus shuttles.'
-        })
+          text_raw: 'Inglewood subway Line K delayed 25m. Transit staff coordinating additional bus shuttles.',
+        }),
       });
     } catch (e) {
       console.error(e);
@@ -700,14 +725,17 @@ async function triggerScenario(type) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: 'Subway Line K delayed 25m. Please proceed to shuttle bus gates for route connections.'
-        })
+          message: 'Subway Line K delayed 25m. Please proceed to shuttle bus gates for route connections.',
+        }),
       });
     } catch (e) {
       console.error(e);
     }
 
-    appendConsoleBubble('assistant', 'Transit Preset executed. Live schedule delay posted, incident ticket logged, and fans notified.');
+    appendConsoleBubble(
+      'assistant',
+      'Transit Preset executed. Live schedule delay posted, incident ticket logged, and fans notified.'
+    );
   }
 }
 

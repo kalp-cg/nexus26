@@ -15,7 +15,7 @@ jest.mock('fs', () => {
     writeFile: jest.fn().mockImplementation((path, data, options, callback) => {
       const cb = typeof options === 'function' ? options : callback;
       if (cb) cb(null);
-    })
+    }),
   };
 });
 
@@ -37,25 +37,25 @@ jest.mock('@google/generative-ai', () => {
                     getFunctionCalls: () => [
                       {
                         name: 'check_gate_congestion',
-                        args: { stadium_id: 'sofi_stadium', gate_id: 'A1' }
-                      }
-                    ]
-                  }
+                        args: { stadium_id: 'sofi_stadium', gate_id: 'A1' },
+                      },
+                    ],
+                  },
                 });
               } else {
                 // Return final text on subsequent calls
                 return Promise.resolve({
                   response: {
                     text: () => 'Final Gemini response with gate details.',
-                    getFunctionCalls: () => []
-                  }
+                    getFunctionCalls: () => [],
+                  },
                 });
               }
-            })
-          })
-        })
+            }),
+          }),
+        }),
       };
-    })
+    }),
   };
 });
 
@@ -70,12 +70,11 @@ const {
   local_log_volunteer_report,
   local_query_open_reports,
   local_dispatch_volunteer,
-  local_generate_reroute
+  local_generate_reroute,
 } = require('./lib/operations');
 const { runGeminiAgent, runFallbackMockAgent } = require('./lib/ai');
 
 describe('Nexus26 Core Library Units', () => {
-
   beforeAll(() => {
     initDatabase(path.join(__dirname));
     initOperations(() => {}, path.join(__dirname));
@@ -162,7 +161,7 @@ describe('Nexus26 Core Library Units', () => {
   test('local_generate_reroute performs critical congestion rerouting', async () => {
     // Force Gate A1 to critical congestion
     const sensorData = readJSON('gate_sensors.json');
-    const gateA1 = sensorData.gates.find(g => g.gate_id === 'A1');
+    const gateA1 = sensorData.gates.find((g) => g.gate_id === 'A1');
     const prevLevel = gateA1.congestion_level;
     gateA1.congestion_level = 'critical';
 
@@ -175,7 +174,14 @@ describe('Nexus26 Core Library Units', () => {
 
   // ── AI Module Tests ──────────────────────────────────────────────────────────
   test('runGeminiAgent processes function calls and loops successfully', async () => {
-    const response = await runGeminiAgent('fan', 'Is Gate A1 congested?', [{ role: 'user', content: 'hello' }], 'fake_api_key', [200, 420], false);
+    const response = await runGeminiAgent(
+      'fan',
+      'Is Gate A1 congested?',
+      [{ role: 'user', content: 'hello' }],
+      'fake_api_key',
+      [200, 420],
+      false
+    );
     expect(response).toBe('Final Gemini response with gate details.');
   });
 
@@ -184,9 +190,26 @@ describe('Nexus26 Core Library Units', () => {
     const esRamp = await runFallbackMockAgent('fan', 'Necesito ayuda con silla de ruedas', [200, 420], true);
     expect(esRamp).toContain('rampa accesible');
 
+    // Fan - Spanish Spanish query for wheelchair at A1
+    const esRampA1 = await runFallbackMockAgent(
+      'fan',
+      'Necesito ayuda con silla de ruedas en puerta A1',
+      [200, 420],
+      true
+    );
+    expect(esRampA1).toContain('Puerta A1 no tiene rampa accesible');
+
     // Fan - French query for wheelchair
     const frRamp = await runFallbackMockAgent('fan', 'comment obtenir une rampe de fauteuil', [200, 420], true);
     expect(frRamp).toContain('rampe accessible');
+
+    // Fan - French query for wheelchair at A1
+    const frRampA1 = await runFallbackMockAgent('fan', 'comment rampe porte A1', [200, 420], true);
+    expect(frRampA1).toContain('Porte A1');
+
+    // Fan - English query for wheelchair at A1
+    const enRampA1 = await runFallbackMockAgent('fan', 'wheelchair at gate a1', [200, 420], true);
+    expect(enRampA1).toContain('Gate A1 does not feature a wheelchair-compliant ramp');
 
     // Fan - Spanish query for transit
     const esTransit = await runFallbackMockAgent('fan', 'ayuda transporte al metro', [200, 420], false);
@@ -214,7 +237,7 @@ describe('Nexus26 Core Library Units', () => {
     const sensorData = readJSON('gate_sensors.json');
     const prevGates = JSON.parse(JSON.stringify(sensorData.gates));
     // Set all gates to low
-    sensorData.gates.forEach(g => {
+    sensorData.gates.forEach((g) => {
       g.congestion_level = 'low';
       g.avg_wait_min = 2;
     });
@@ -239,7 +262,7 @@ describe('Nexus26 Core Library Units', () => {
       text_raw: 'Heart issue',
       timestamp: new Date().toISOString(),
       status: 'open',
-      assigned_volunteer: null
+      assigned_volunteer: null,
     };
     reports.unshift(newReport);
 
