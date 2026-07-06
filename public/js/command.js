@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Nexus26 - Command Center Dashboard Controller
+ * @description Manages the staff operations dashboard including WebSocket event
+ *   consumption, KPI stat counters, scenario simulation presets, live alert feeds,
+ *   volunteer dispatch workflows, and the natural-language operations console.
+ * @version 2.5.0
+ */
+
+'use strict';
+
 // State and connection
 let socket = null;
 let chatHistory = [];

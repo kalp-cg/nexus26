@@ -56,9 +56,11 @@ nexus26/
 │   ├── fan.html                     # Mobile Fan Companion View
 │   └── index.html                   # Submission Gateway Portal
 ├── .env.example                     # Environment variables template
+├── .eslintrc.json                   # ESLint code quality configuration
 ├── package.json                     # Dependency manifests & startup scripts
 ├── server.js                        # Node/Express backend & WebSocket Spine
-└── test_queries.js                  # Automated CLI query validation suite
+├── server.test.js                   # Jest unit test suite (17 assertions)
+└── test_queries.js                  # Automated CLI integration test suite
 ```
 </details>
 
@@ -154,11 +156,69 @@ Arrange two browser windows side-by-side:
 3. In the live alerts feed, click **Dispatch Volunteer** on the newly created ticket. The status changes to "En Route" and a dispatch notification is pushed to the Fan companion.
 </details>
 
----
+## Automated Testing
 
-## Automated CLI Query Test
-To instantly validate query routing, run this command in your terminal while the server is active:
+### Jest Unit Test Suite (17 assertions)
+Run the full test suite with:
+```bash
+npm test
+```
+The suite validates:
+- All REST API endpoints (GET/POST) with correct status codes
+- Input validation (400 responses for missing/invalid fields)
+- 404 handling for non-existent resources and unknown endpoints
+- XSS injection sanitization (verifies `<script>` tags are escaped)
+- Volunteer dispatch lifecycle (create report → assign volunteer)
+- Chat fallback agent responses for both fan and command personas
+
+### CLI Integration Test
+While the server is running, execute the integration test:
 ```bash
 node test_queries.js
 ```
-It tests 7 typical scenarios (asking about bottlenecks, overflowing garbage bins, wheelchair ramps, transit schedules, and volunteer dispatch requests) and validates the structured output.
+
+---
+
+## Code Quality Standards
+
+| Standard | Implementation |
+|---|---|
+| **Linting** | ESLint configured (`.eslintrc.json`) with `eslint:recommended` |
+| **JSDoc** | All functions, routes, and modules annotated with `@param`/`@returns` |
+| **Strict Mode** | `'use strict'` enforced across all JS files |
+| **Structured Logging** | Timestamped `[ISO] [LEVEL] [MODULE]` format via `log()` utility |
+| **Input Validation** | All POST endpoints validate required fields with 400 responses |
+| **Error Handling** | Global 404 handler + centralized error middleware |
+| **Environment Validation** | Startup check logs config state and warns on missing keys |
+
+---
+
+## Security Architecture
+
+| Layer | Protection |
+|---|---|
+| **HTTP Headers** | X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy |
+| **HSTS** | Strict-Transport-Security with 1-year max-age |
+| **CSP** | Whitelist-only Content-Security-Policy with `frame-ancestors 'none'` |
+| **CORS** | Strict origin whitelist (Render deployment + localhost only) |
+| **XSS Sanitization** | HTML entity escaping on all user-supplied POST body strings |
+| **Rate Limiting** | 180 requests/minute per IP sliding window |
+| **Body Size Limit** | 100kb max JSON payload to prevent DoS |
+| **Path Traversal** | Whitelist-only file access (`ALLOWED_FILES` array) |
+
+---
+
+## API Reference
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/sensors` | Live gate congestion sensor data |
+| `POST` | `/api/sensors/update` | Update gate congestion level |
+| `GET` | `/api/transit` | Transit line schedule and delays |
+| `POST` | `/api/transit/update` | Update transit line delay |
+| `GET` | `/api/reports` | All volunteer incident reports |
+| `POST` | `/api/reports` | File a new incident report |
+| `POST` | `/api/dispatch` | Assign volunteer to a report |
+| `POST` | `/api/broadcast` | Send emergency broadcast |
+| `POST` | `/api/reset` | Reset all data to defaults |
+| `POST` | `/api/chat/:persona` | AI chat (fan or command) |

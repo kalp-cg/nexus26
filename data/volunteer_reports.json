@@ -1,5 +1,45 @@
 [
   {
+    "report_id": "VR-8564",
+    "volunteer_id": "V-608",
+    "zone": "Gate A2",
+    "issue_type": "medical",
+    "text_raw": "First aid needed",
+    "timestamp": "2026-07-06T14:36:08.910Z",
+    "status": "dispatched",
+    "assigned_volunteer": "Dave (Section 104)"
+  },
+  {
+    "report_id": "VR-6152",
+    "volunteer_id": "V-642",
+    "zone": "&lt;img src=x onerror=alert(1)&gt;",
+    "issue_type": "other",
+    "text_raw": "Test",
+    "timestamp": "2026-07-06T14:36:08.900Z",
+    "status": "open",
+    "assigned_volunteer": null
+  },
+  {
+    "report_id": "VR-1985",
+    "volunteer_id": "V-380",
+    "zone": "North Concourse",
+    "issue_type": "overflowing_bin",
+    "text_raw": "&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#x2F;script&gt;",
+    "timestamp": "2026-07-06T14:36:08.890Z",
+    "status": "open",
+    "assigned_volunteer": null
+  },
+  {
+    "report_id": "VR-6352",
+    "volunteer_id": "V-886",
+    "zone": "Gate B1",
+    "issue_type": "overflowing_bin",
+    "text_raw": "Bins are full",
+    "timestamp": "2026-07-06T14:36:08.880Z",
+    "status": "open",
+    "assigned_volunteer": null
+  },
+  {
     "report_id": "VR-9663",
     "volunteer_id": "V-942",
     "zone": "Gate A2",

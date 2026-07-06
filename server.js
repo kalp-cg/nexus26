@@ -19,6 +19,39 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 dotenv.config();
 
+/**
+ * Structured Logger — prefixes all log output with ISO timestamp, severity, and module tag.
+ * @param {'INFO'|'WARN'|'ERROR'} level - Severity level
+ * @param {string} module - Module or subsystem originating the log
+ * @param {string} message - Human-readable log content
+ */
+const log = (level, module, message) => {
+  const timestamp = new Date().toISOString();
+  const prefix = `[${timestamp}] [${level}] [${module}]`;
+  if (level === 'ERROR') {
+    console.error(`${prefix} ${message}`);
+  } else if (level === 'WARN') {
+    console.warn(`${prefix} ${message}`);
+  } else {
+    console.log(`${prefix} ${message}`);
+  }
+};
+
+/**
+ * Validates required environment variables on server startup.
+ * Logs warnings for missing optional config and confirms runtime mode.
+ */
+const validateEnvironment = () => {
+  const port = process.env.PORT || 3000;
+  if (!process.env.GEMINI_API_KEY) {
+    log('WARN', 'ENV', 'GEMINI_API_KEY not set — running in Fallback Mock-Agent mode');
+  } else {
+    log('INFO', 'ENV', 'GEMINI_API_KEY detected — Gemini function-calling enabled');
+  }
+  log('INFO', 'ENV', `PORT resolved to ${port}`);
+};
+validateEnvironment();
+
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -209,7 +242,9 @@ wss.on('connection', (ws) => {
   });
 });
 
-// REST API Endpoints for Data Layer
+// ─── REST API Endpoints ──────────────────────────────────────────────────────
+
+/** @route GET /api/sensors - Retrieve live gate congestion sensor data */
 app.get('/api/sensors', (req, res) => {
   res.json(readJSON('gate_sensors.json'));
 });
@@ -242,7 +277,7 @@ app.post('/api/sensors/update', (req, res) => {
   sensorData.timestamp = new Date().toISOString();
 
   if (writeJSON('gate_sensors.json', sensorData)) {
-    console.log(`[Sensor Update] Gate ${gate_id} updated to ${congestion_level}`);
+    log('INFO', 'SENSOR', `Gate ${gate_id} updated to ${congestion_level}`);
     broadcast({ type: 'SENSOR_UPDATE', data: sensorData });
     res.json({ success: true, data: sensorData });
   } else {
@@ -250,41 +285,60 @@ app.post('/api/sensors/update', (req, res) => {
   }
 });
 
+/** @route GET /api/transit - Retrieve live transit line schedule and delays */
 app.get('/api/transit', (req, res) => {
   res.json(readJSON('transit_feeds.json'));
 });
 
+/** @route POST /api/transit/update - Update a transit line's delay status */
 app.post('/api/transit/update', (req, res) => {
   const line = sanitizeInput(req.body.line);
   const status = sanitizeInput(req.body.status);
   const delay_min = Number(req.body.delay_min) || 0;
 
+  // Input validation
+  if (!line) {
+    return res.status(400).json({ error: 'line is required' });
+  }
+  if (!status) {
+    return res.status(400).json({ error: 'status is required' });
+  }
+
   const transitData = readJSON('transit_feeds.json');
   if (!transitData) return res.status(500).json({ error: 'Failed to read transit data' });
-  
+
   const matchedLine = transitData.lines.find(l => l.line === line);
-  if (matchedLine) {
-    matchedLine.status = status;
-    matchedLine.delay_min = delay_min || 0;
-    writeJSON('transit_feeds.json', transitData);
-    console.log(`[Transit Update] Line: ${line}, Status: ${status}, Delay: ${delay_min} mins`);
-    broadcast({ type: 'TRANSIT_UPDATE', data: transitData });
-    res.json({ success: true, data: transitData });
-  } else {
-    res.status(404).json({ error: 'Line not found' });
+  if (!matchedLine) {
+    return res.status(404).json({ error: `Line '${line}' not found` });
   }
+
+  matchedLine.status = status;
+  matchedLine.delay_min = delay_min;
+  writeJSON('transit_feeds.json', transitData);
+  log('INFO', 'TRANSIT', `Line: ${line}, Status: ${status}, Delay: ${delay_min} mins`);
+  broadcast({ type: 'TRANSIT_UPDATE', data: transitData });
+  res.json({ success: true, data: transitData });
 });
 
+/** @route GET /api/reports - Retrieve all volunteer incident reports */
 app.get('/api/reports', (req, res) => {
   res.json(readJSON('volunteer_reports.json'));
 });
 
+/** @route POST /api/reports - File a new on-ground volunteer incident report */
 app.post('/api/reports', (req, res) => {
   const zone = sanitizeInput(req.body.zone);
   const issue_type = sanitizeInput(req.body.issue_type);
   const text_raw = sanitizeInput(req.body.text_raw);
+
+  // Input validation
+  const validIssueTypes = ['overflowing_bin', 'crowd_surge', 'accessibility_blocked', 'medical', 'other'];
+  if (issue_type && !validIssueTypes.includes(issue_type)) {
+    return res.status(400).json({ error: `issue_type must be one of: ${validIssueTypes.join(', ')}` });
+  }
+
   const reports = readJSON('volunteer_reports.json') || [];
-  
+
   const newReport = {
     report_id: `VR-${Math.floor(1000 + Math.random() * 9000)}`,
     volunteer_id: `V-${Math.floor(100 + Math.random() * 900)}`,
@@ -298,7 +352,7 @@ app.post('/api/reports', (req, res) => {
 
   reports.unshift(newReport);
   if (writeJSON('volunteer_reports.json', reports)) {
-    console.log(`[Volunteer Report] New report registered: ${newReport.report_id}`);
+    log('INFO', 'REPORT', `New report registered: ${newReport.report_id} in ${newReport.zone}`);
     broadcast({ type: 'NEW_REPORT', data: newReport });
     res.json(newReport);
   } else {
@@ -306,22 +360,29 @@ app.post('/api/reports', (req, res) => {
   }
 });
 
+/** @route POST /api/dispatch - Assign a volunteer to a specific incident report */
 app.post('/api/dispatch', (req, res) => {
   const report_id = sanitizeInput(req.body.report_id);
+
+  // Input validation
+  if (!report_id) {
+    return res.status(400).json({ error: 'report_id is required' });
+  }
+
   const reports = readJSON('volunteer_reports.json');
   if (!reports) return res.status(500).json({ error: 'Failed to read reports' });
 
   const report = reports.find(r => r.report_id === report_id);
-  if (!report) return res.status(404).json({ error: 'Report not found' });
+  if (!report) return res.status(404).json({ error: `Report '${report_id}' not found` });
 
   const volunteers = ['Dave (Section 104)', 'Maria (Gate A2)', 'Carlos (Transit Hub)', 'Alex (Section 118)'];
   const assigned = volunteers[Math.floor(Math.random() * volunteers.length)];
-  
+
   report.status = 'dispatched';
   report.assigned_volunteer = assigned;
 
   if (writeJSON('volunteer_reports.json', reports)) {
-    console.log(`[Dispatch] Report ${report_id} assigned to ${assigned}`);
+    log('INFO', 'DISPATCH', `Report ${report_id} assigned to ${assigned}`);
     broadcast({ type: 'DISPATCH_VOLUNTEER', data: report });
     res.json({ success: true, data: report });
   } else {
@@ -329,35 +390,34 @@ app.post('/api/dispatch', (req, res) => {
   }
 });
 
+/** @route POST /api/reset - Reset all data stores to baseline defaults */
 app.post('/api/reset', (req, res) => {
   const defaultSensors = {
-    stadium_id: "sofi_stadium",
+    stadium_id: 'sofi_stadium',
     timestamp: new Date().toISOString(),
     gates: [
-      { "gate_id": "A1", "capacity": 4000, "current_count": 1200, "congestion_level": "low", "avg_wait_min": 3 },
-      { "gate_id": "A2", "capacity": 4000, "current_count": 1100, "congestion_level": "low", "avg_wait_min": 3 },
-      { "gate_id": "B1", "capacity": 3500, "current_count": 1500, "congestion_level": "low", "avg_wait_min": 4 }
+      { gate_id: 'A1', capacity: 4000, current_count: 1200, congestion_level: 'low', avg_wait_min: 3 },
+      { gate_id: 'A2', capacity: 4000, current_count: 1100, congestion_level: 'low', avg_wait_min: 3 },
+      { gate_id: 'B1', capacity: 3500, current_count: 1500, congestion_level: 'low', avg_wait_min: 4 }
     ]
   };
 
-  const defaultReports = [
-    {
-      "report_id": "VR-1042",
-      "volunteer_id": "V-118",
-      "zone": "North Concourse",
-      "issue_type": "overflowing_bin",
-      "text_raw": "Bins near section 118 are overflowing, getting messy",
-      "timestamp": new Date().toISOString(),
-      "status": "open",
-      "assigned_volunteer": null
-    }
-  ];
+  const defaultReports = [{
+    report_id: 'VR-1042',
+    volunteer_id: 'V-118',
+    zone: 'North Concourse',
+    issue_type: 'overflowing_bin',
+    text_raw: 'Bins near section 118 are overflowing, getting messy',
+    timestamp: new Date().toISOString(),
+    status: 'open',
+    assigned_volunteer: null
+  }];
 
   const defaultTransit = {
-    "city": "Inglewood, CA",
-    "lines": [
-      { "line": "K Line", "status": "on_time", "delay_min": 0, "next_departure": "21:26" },
-      { "line": "Shuttle Bus 3", "status": "on_time", "next_departure": "21:18" }
+    city: 'Inglewood, CA',
+    lines: [
+      { line: 'K Line', status: 'on_time', delay_min: 0, next_departure: '21:26' },
+      { line: 'Shuttle Bus 3', status: 'on_time', next_departure: '21:18' }
     ]
   };
 
@@ -365,20 +425,21 @@ app.post('/api/reset', (req, res) => {
   writeJSON('volunteer_reports.json', defaultReports);
   writeJSON('transit_feeds.json', defaultTransit);
 
-  console.log('[System Reset] Data reset to baseline settings.');
+  log('INFO', 'RESET', 'Data reset to baseline settings');
   broadcast({ type: 'RESET_SYSTEM', data: { sensors: defaultSensors, reports: defaultReports, transit: defaultTransit } });
   res.json({ success: true });
 });
 
+/** @route POST /api/broadcast - Send an emergency broadcast to all connected fans */
 app.post('/api/broadcast', (req, res) => {
   const message = sanitizeInput(req.body.message);
-  if (!message) return res.status(400).json({ error: 'Message content is required' });
-  console.log(`[Emergency Broadcast] Message: "${message}"`);
+  if (!message) return res.status(400).json({ error: 'message is required' });
+  log('WARN', 'BROADCAST', `Emergency: "${message}"`);
   broadcast({ type: 'EMERGENCY_BROADCAST', data: { message, timestamp: new Date().toISOString() } });
   res.json({ success: true });
 });
 
-// SYSTEM PROMPTS (from section 8)
+// ─── Gemini AI System Prompts ────────────────────────────────────────────────
 const FAN_SYSTEM_PROMPT = `You are Nexus26, the official FIFA World Cup 2026 fan navigation assistant.
 
 You help fans in their native language with: finding their seat/section, 
@@ -425,7 +486,14 @@ Rules:
 6. Flag anything classified as "medical" or "crowd_surge" at the top of any 
    response, regardless of what was asked — safety signals are never buried.`;
 
-// LOCAL TOOL FUNCTIONS
+// ─── Local Tool Functions (Gemini Function-Calling Handlers) ─────────────────
+
+/**
+ * Checks live gate congestion for one or all gates.
+ * @param {string} stadium_id - Stadium identifier
+ * @param {string} [gate_id] - Optional specific gate to query
+ * @returns {Promise<Object|Array>} Single gate object or array of all gates
+ */
 const local_check_gate_congestion = async (stadium_id, gate_id) => {
   const data = readJSON('gate_sensors.json');
   if (!data) return { error: 'Data unavailable' };
@@ -436,10 +504,20 @@ const local_check_gate_congestion = async (stadium_id, gate_id) => {
   return data.gates;
 };
 
+/**
+ * Retrieves live transit schedule and delay data.
+ * @param {string} city - City name for transit lookup
+ * @returns {Promise<Object>} Transit feed object with lines array
+ */
 const local_get_transit_status = async (city) => {
   return readJSON('transit_feeds.json') || { error: 'Transit data unavailable' };
 };
 
+/**
+ * Looks up wheelchair/accessibility route information for a specific gate.
+ * @param {string} gate_id - Gate identifier to look up accessibility paths for
+ * @returns {Promise<Object>} Accessibility route details or error
+ */
 const local_get_accessible_route = async (gate_id) => {
   const data = readJSON('accessibility_routes.json');
   if (!data) return { error: 'Accessibility data unavailable' };
@@ -447,6 +525,13 @@ const local_get_accessible_route = async (gate_id) => {
   return route ? { gate_id, ...route } : { error: `No accessibility information for gate ${gate_id}` };
 };
 
+/**
+ * Logs a new volunteer incident report from an AI-triggered action.
+ * @param {string} zone - Location zone of the incident
+ * @param {string} issue_type - Category of the issue
+ * @param {string} text_raw - Detailed description text
+ * @returns {Promise<Object>} The newly created report object
+ */
 const local_log_volunteer_report = async (zone, issue_type, text_raw) => {
   const reports = readJSON('volunteer_reports.json') || [];
   const newReport = {
@@ -465,6 +550,13 @@ const local_log_volunteer_report = async (zone, issue_type, text_raw) => {
   return newReport;
 };
 
+/**
+ * Queries volunteer reports filtered by issue type, zone, and status.
+ * @param {string} [issue_type] - Filter by issue category
+ * @param {string} [zone] - Filter by zone name (partial match)
+ * @param {string} [status] - Filter by report status ('open', 'dispatched', 'all')
+ * @returns {Promise<Array>} Filtered array of matching reports
+ */
 const local_query_open_reports = async (issue_type, zone, status) => {
   const reports = readJSON('volunteer_reports.json') || [];
   return reports.filter(r => {
@@ -476,6 +568,12 @@ const local_query_open_reports = async (issue_type, zone, status) => {
   });
 };
 
+/**
+ * Dispatches a volunteer to handle a specific incident report.
+ * @param {string} report_id - The report to assign a volunteer to
+ * @param {string} [zone] - Override zone for assignment label
+ * @returns {Promise<Object>} Updated report with assigned volunteer or error
+ */
 const local_dispatch_volunteer = async (report_id, zone) => {
   const reports = readJSON('volunteer_reports.json') || [];
   const report = reports.find(r => r.report_id === report_id);
@@ -491,6 +589,14 @@ const local_dispatch_volunteer = async (report_id, zone) => {
   return report;
 };
 
+/**
+ * Generates an optimized walking route, rerouting around congested gates.
+ * @param {string} stadium_id - Stadium identifier
+ * @param {string|number} destination_section - Target seat section number
+ * @param {Array<number>} [current_location_coords] - Fan's current [x, y] position
+ * @param {string} [avoid_congestion_above] - Congestion threshold ('high' or 'critical')
+ * @returns {Promise<Object>} Route with path coordinates, distance, duration, and instructions
+ */
 const local_generate_reroute = async (stadium_id, destination_section, current_location_coords, avoid_congestion_above) => {
   const mapCoords = readJSON('stadium_map_coords.json');
   const sensorData = readJSON('gate_sensors.json');

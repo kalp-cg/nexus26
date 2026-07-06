@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Nexus26 - Fan Companion Client Controller
+ * @description Manages WebSocket connectivity, chat UI, SVG/3D map toggling,
+ *   voice recognition (Web Speech API), bilingual translation, accessibility
+ *   routing, and real-time sensor update rendering for the mobile fan surface.
+ * @version 2.5.0
+ */
+
+'use strict';
+
 // Web Socket and State management
 let socket = null;
 let currentLanguage = 'en';
