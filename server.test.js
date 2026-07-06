@@ -204,4 +204,160 @@ describe('Nexus26 REST API — Core Operations', () => {
     expect(res.body.mode).toBe('fallback-agent');
   });
 
+  // ── Chat Persona: Fan Fallback Agent Details ───────────────────────────────
+
+  test('POST /api/chat/fan processes wheelchair accessibility queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'I need wheelchair access to Gate A2', history: [], accessibility_enabled: true });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('Gate A2 features a wheelchair ramp');
+  });
+
+  test('POST /api/chat/fan processes Spanish language requests', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: '¿Cómo llego a la Sección 102?', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('Sección 102');
+  });
+
+  test('POST /api/chat/fan processes French language requests', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'Comment aller à la Section 102?', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('Section 102');
+  });
+
+  test('POST /api/chat/fan processes transit delay queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'Is the metro train delayed?', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('transit feed');
+  });
+
+  test('POST /api/chat/fan processes greeting requests', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'hello', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('Nexus26');
+  });
+
+  test('POST /api/chat/fan processes concessions queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'where is the food?', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('Concessions');
+  });
+
+  test('POST /api/chat/fan processes exits queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'how to exit the stadium?', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('Main stadium exits');
+  });
+
+  test('POST /api/chat/fan processes thank queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'thank you', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('welcome');
+  });
+
+  test('POST /api/chat/fan processes capabilities queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'what can you do?', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('Navigate to seat sections');
+  });
+
+  test('POST /api/chat/fan processes match details queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'who is playing today?', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('USA vs. Mexico');
+  });
+
+  // ── Chat Persona: Command Fallback Agent Details ───────────────────────────
+
+  test('POST /api/chat/command processes waste reports query', async () => {
+    const res = await request(app)
+      .post('/api/chat/command')
+      .send({ message: 'Which zones have overflowing waste bins?', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('bin');
+  });
+
+  test('POST /api/chat/command processes dispatch commands', async () => {
+    const res = await request(app)
+      .post('/api/chat/command')
+      .send({ message: 'dispatch volunteer Carlos to VR-1042', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('DISPATCHED');
+  });
+
+  test('POST /api/chat/command handles non-existent report dispatches', async () => {
+    const res = await request(app)
+      .post('/api/chat/command')
+      .send({ message: 'dispatch volunteer Carlos to VR-9999', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('failed');
+  });
+
+  test('POST /api/chat/command fallback message for general queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/command')
+      .send({ message: 'general question', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('COMMAND CORE');
+  });
+
+  // ── Reset & Broadcast Endpoints ─────────────────────────────────────────────
+
+  test('POST /api/reset resets baseline data', async () => {
+    const res = await request(app).post('/api/reset');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  test('POST /api/broadcast successfully broadcasts a message', async () => {
+    const res = await request(app)
+      .post('/api/broadcast')
+      .send({ message: 'Emergency alert!' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  test('POST /api/broadcast returns 400 if message is missing', async () => {
+    const res = await request(app)
+      .post('/api/broadcast')
+      .send({});
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toContain('message is required');
+  });
+
+  test('POST /api/chat/fan processes compliance manual queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'What is the compliance manual policy?', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('COMPLIANCE POLICY');
+  });
+
+  test('POST /api/chat/command processes compliance manual queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/command')
+      .send({ message: 'show waste compliance threshold rules', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toContain('COMPLIANCE SOP');
+  });
+
 });

@@ -114,14 +114,14 @@ async function runTests() {
     console.log(`[Test ${i + 1}/${queries.length}] ${q.description}`);
     console.log(`> Persona: ${q.persona.toUpperCase()}`);
     console.log(`> Question: "${q.message}"`);
-    
+
     const result = await sendQuery(q);
-    
+
     if (result.success) {
       console.log(`\n> Response Mode: ${result.mode.toUpperCase()}`);
-      console.log(`> Answer:\n-------------------------------------------------------`);
+      console.log('> Answer:\n-------------------------------------------------------');
       console.log(result.response);
-      console.log(`-------------------------------------------------------\n`);
+      console.log('-------------------------------------------------------\n');
     } else {
       console.log(`> ERROR: ${result.error}\n`);
     }

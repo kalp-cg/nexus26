@@ -3,6 +3,8 @@
  * Built using Three.js and OrbitControls
  */
 
+/* eslint-disable no-unused-vars */
+
 class Stadium3D {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
@@ -12,12 +14,12 @@ class Stadium3D {
     this.camera = null;
     this.renderer = null;
     this.controls = null;
-    
+
     this.gateSpheres = {};
     this.gateLines = {};
     this.pathMesh = null;
     this.userPinMesh = null;
-    
+
     this.isPulsing = false;
     this.pulseScale = 1.0;
     this.pulseDir = 1;
@@ -80,8 +82,8 @@ class Stadium3D {
   buildGround() {
     // Floor Grid / Platform
     const floorGeo = new THREE.PlaneGeometry(380, 380);
-    const floorMat = new THREE.MeshBasicMaterial({ 
-      color: 0x1e293b, 
+    const floorMat = new THREE.MeshBasicMaterial({
+      color: 0x1e293b,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.2
@@ -100,7 +102,7 @@ class Stadium3D {
   buildPitch() {
     // Grass Field in the Center
     const pitchGeo = new THREE.PlaneGeometry(100, 65);
-    const pitchMat = new THREE.MeshStandardMaterial({ 
+    const pitchMat = new THREE.MeshStandardMaterial({
       color: 0x10b981, // Emerald Green
       roughness: 0.8,
       metalness: 0.1
@@ -123,10 +125,10 @@ class Stadium3D {
     // Create nested elliptical arenas for Stands
     const createEllipticalStand = (rx, rz, height, yPos, color) => {
       const standGroup = new THREE.Group();
-      
+
       const geom = new THREE.CylinderGeometry(rx, rx - 15, height, 32, 1, true);
-      const mat = new THREE.MeshStandardMaterial({ 
-        color: color, 
+      const mat = new THREE.MeshStandardMaterial({
+        color: color,
         side: THREE.DoubleSide,
         roughness: 0.5,
         transparent: true,
@@ -134,7 +136,7 @@ class Stadium3D {
       });
       const mesh = new THREE.Mesh(geom, mat);
       mesh.position.y = yPos;
-      
+
       // Make it slightly elliptical by scaling Z
       mesh.scale.set(1.0, 1.0, rz / rx);
       standGroup.add(mesh);
@@ -154,7 +156,7 @@ class Stadium3D {
     for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
       const x = Math.cos(angle) * 142;
       const z = Math.sin(angle) * 117;
-      
+
       const colGeo = new THREE.CylinderGeometry(1.5, 2.5, 54, 8);
       const colMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
       const column = new THREE.Mesh(colGeo, colMat);
@@ -273,7 +275,7 @@ class Stadium3D {
 
     sphere.material.color.setHex(color);
     sphere.material.emissive.setHex(color);
-    
+
     if (level === 'critical') {
       sphere.material.emissiveIntensity = 0.5;
     } else {
@@ -287,17 +289,17 @@ class Stadium3D {
     if (!pathCoords || pathCoords.length < 2) return;
 
     const points3D = [];
-    
+
     // Map path coordinates
     for (let i = 0; i < pathCoords.length; i++) {
       const pt = pathCoords[i];
       let y = 0.4; // Ground height
-      
+
       // Lift the final coordinate (Seat Section) into the stands!
       if (i === pathCoords.length - 1) {
         y = 18; // Height elevation inside Tier 1
       }
-      
+
       const pos = this.mapSVGTo3D(pt[0], pt[1], y);
       points3D.push(new THREE.Vector3(pos.x, pos.y, pos.z));
     }
@@ -367,7 +369,7 @@ class Stadium3D {
   onWindowResize() {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
-    
+
     if (this.camera && this.renderer) {
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();

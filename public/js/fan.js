@@ -6,6 +6,8 @@
  * @version 2.5.0
  */
 
+/* eslint-disable no-unused-vars */
+
 'use strict';
 
 // Web Socket and State management
@@ -74,7 +76,7 @@ async function fetchSensorBaseline() {
 function connectWebSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.host}`;
-  
+
   socket = new WebSocket(wsUrl);
 
   socket.onopen = () => {
@@ -94,39 +96,39 @@ function connectWebSocket() {
     try {
       const msg = JSON.parse(event.data);
       console.log('[WS] Received message:', msg);
-      
+
       switch (msg.type) {
-        case 'SENSOR_UPDATE':
-          updateGateVisuals(msg.data.gates);
-          
-          // Auto-retrigger route check if active route is blocked by gate critical spike
-          if (activePathData) {
-            const activeGate = msg.data.gates.find(g => g.gate_id === activePathData.gate_used);
-            if (activeGate && activeGate.congestion_level === 'critical') {
-              showSystemAlertBanner(`Active Route Warning: Gate ${activePathData.gate_used} has spiked to critical congestion. Rerouting path automatically.`, 'critical');
-              recalculateActiveRoute();
-            }
+      case 'SENSOR_UPDATE':
+        updateGateVisuals(msg.data.gates);
+
+        // Auto-retrigger route check if active route is blocked by gate critical spike
+        if (activePathData) {
+          const activeGate = msg.data.gates.find(g => g.gate_id === activePathData.gate_used);
+          if (activeGate && activeGate.congestion_level === 'critical') {
+            showSystemAlertBanner(`Active Route Warning: Gate ${activePathData.gate_used} has spiked to critical congestion. Rerouting path automatically.`, 'critical');
+            recalculateActiveRoute();
           }
-          break;
-        case 'REROUTE_FAN':
-          drawReroute(msg.data);
-          break;
-        case 'EMERGENCY_BROADCAST':
-          showSystemAlertBanner(`Emergency Broadcast: ${msg.data.message}`, 'critical');
-          appendChatBubble('assistant', `Emergency Notice: ${msg.data.message}`);
-          speakResponse(`Attention, safety broadcast: ${msg.data.message}`);
-          break;
-        case 'RESET_SYSTEM':
-          updateGateVisuals(msg.data.sensors.gates);
-          clearRoute();
-          dismissAlertBanner();
-          appendChatBubble('tool-notification', 'System metrics reset to baseline. Active paths cleared.');
-          break;
-        case 'DISPATCH_VOLUNTEER':
-          if (activePathData && activePathData.gate_used === msg.data.zone) {
-            appendChatBubble('assistant', `Operational Alert: A service volunteer (${msg.data.assigned_volunteer}) has been dispatched to your area to assist with crowd operations.`);
-          }
-          break;
+        }
+        break;
+      case 'REROUTE_FAN':
+        drawReroute(msg.data);
+        break;
+      case 'EMERGENCY_BROADCAST':
+        showSystemAlertBanner(`Emergency Broadcast: ${msg.data.message}`, 'critical');
+        appendChatBubble('assistant', `Emergency Notice: ${msg.data.message}`);
+        speakResponse(`Attention, safety broadcast: ${msg.data.message}`);
+        break;
+      case 'RESET_SYSTEM':
+        updateGateVisuals(msg.data.sensors.gates);
+        clearRoute();
+        dismissAlertBanner();
+        appendChatBubble('tool-notification', 'System metrics reset to baseline. Active paths cleared.');
+        break;
+      case 'DISPATCH_VOLUNTEER':
+        if (activePathData && activePathData.gate_used === msg.data.zone) {
+          appendChatBubble('assistant', `Operational Alert: A service volunteer (${msg.data.assigned_volunteer}) has been dispatched to your area to assist with crowd operations.`);
+        }
+        break;
       }
     } catch (err) {
       console.error('[WS] Error processing message:', err);
@@ -142,7 +144,7 @@ function updateGateVisuals(gates) {
       if (gate.congestion_level === 'critical') {
         circle.setAttribute('fill', 'var(--status-red)');
         circle.setAttribute('stroke', '#fff');
-        circle.innerHTML = `<animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite" />`;
+        circle.innerHTML = '<animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite" />';
       } else if (gate.congestion_level === 'high') {
         circle.setAttribute('fill', '#ff7a00');
         circle.removeAttribute('stroke');
@@ -172,14 +174,14 @@ function setLanguage(lang) {
       btn.classList.add('active');
     }
   });
-  
+
   const greetings = {
     en: 'Language set to English. How can I help you find your seat?',
     es: 'Idioma cambiado a Español. ¿Cómo puedo ayudarte a encontrar tu sección?',
     fr: 'Langue configurée en Français. Comment puis-je vous aider à trouver votre place ?',
     de: 'Sprache auf Deutsch eingestellt. Wie kann ich Ihnen helfen, Ihren Sitzplatz zu finden?'
   };
-  
+
   appendChatBubble('assistant', greetings[lang]);
 }
 
@@ -187,7 +189,7 @@ function setLanguage(lang) {
 function toggleAccessibility() {
   accessibilityEnabled = !accessibilityEnabled;
   accessToggle.classList.toggle('active', accessibilityEnabled);
-  
+
   if (accessibilityEnabled) {
     accessToggle.textContent = 'Route: Accessible';
     appendChatBubble('tool-notification', 'Accessibility routing active (wheelchair ramps preferred).');
@@ -221,11 +223,11 @@ function showSystemAlertBanner(message, type = 'critical') {
   const banner = document.getElementById('system-alert-banner');
   const title = document.getElementById('alert-banner-title');
   const msg = document.getElementById('alert-banner-msg');
-  
+
   title.textContent = type === 'critical' ? 'CRITICAL SYSTEM WARNING' : 'OPERATIONAL NOTICE';
   msg.textContent = message;
   banner.classList.remove('hidden');
-  
+
   if (type === 'critical') {
     banner.style.background = 'var(--status-red)';
     banner.style.color = '#fff';
@@ -251,7 +253,7 @@ async function sendTextMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
   chatInput.value = '';
-  
+
   appendChatBubble('user', text);
   await queryAssistant(text);
 }
@@ -263,7 +265,7 @@ function appendChatBubble(role, text) {
   bubble.textContent = text;
   chatMessages.appendChild(bubble);
   chatMessages.scrollTop = chatMessages.scrollHeight;
-  
+
   if (role === 'user' || role === 'assistant') {
     chatHistory.push({ role, content: text });
     if (chatHistory.length > 8) chatHistory.shift();
@@ -276,23 +278,23 @@ function initSpeechRecognition() {
     console.warn('SpeechRecognition API not supported in this browser.');
     return;
   }
-  
+
   recognition = new SpeechRecognition();
   recognition.continuous = false;
   recognition.interimResults = false;
-  
+
   recognition.onstart = () => {
     voiceBtn.classList.add('listening');
     voiceBtn.textContent = 'LISTENING...';
     console.log('[Speech] Recognition started');
   };
-  
+
   recognition.onend = () => {
     voiceBtn.classList.remove('listening');
     voiceBtn.textContent = 'TAP TO SPEAK';
     console.log('[Speech] Recognition stopped');
   };
-  
+
   recognition.onresult = async (event) => {
     const text = event.results[0][0].transcript;
     console.log('[Speech] Transcribed result:', text);
@@ -318,10 +320,10 @@ function startVoiceAssistant() {
     alert('Speech recognition is not supported in this browser. Please type your request.');
     return;
   }
-  
+
   const locales = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE' };
   recognition.lang = locales[currentLanguage] || 'en-US';
-  
+
   try {
     recognition.start();
   } catch (err) {
@@ -332,30 +334,30 @@ function startVoiceAssistant() {
 // Speak response helper
 function speakResponse(text) {
   if (!window.speechSynthesis) return;
-  
+
   window.speechSynthesis.cancel();
-  const utterance = new SynthesisSpeechUtterance || new SpeechSynthesisUtterance(text);
-  
+  const utterance = new SpeechSynthesisUtterance(text);
+
   const locales = { en: 'en', es: 'es', fr: 'fr', de: 'de' };
   const targetLocale = locales[currentLanguage] || 'en';
-  
+
   const voices = window.speechSynthesis.getVoices();
   const matchedVoice = voices.find(v => v.lang.startsWith(targetLocale));
   if (matchedVoice) {
     utterance.voice = matchedVoice;
   }
-  
+
   utterance.onstart = () => { isSpeaking = true; };
   utterance.onend = () => { isSpeaking = false; };
   utterance.onerror = () => { isSpeaking = false; };
-  
+
   window.speechSynthesis.speak(utterance);
 }
 
 // Send request to Gemini Backend
 async function queryAssistant(messageText) {
-  appendChatBubble('tool-notification', `Querying Nexus26 Brain...`);
-  
+  appendChatBubble('tool-notification', 'Querying Nexus26 Brain...');
+
   const apiKey = localStorage.getItem('gemini_api_key') || '';
   const currentPinCoords = activePathData ? activePathData.path[0] : [200, 420];
 
@@ -371,18 +373,18 @@ async function queryAssistant(messageText) {
         accessibility_enabled: accessibilityEnabled
       })
     });
-    
+
     const result = await response.json();
-    
+
     // Remove the querying loader bubble
     const notifications = document.querySelectorAll('.chat-bubble.tool-notification');
     if (notifications.length > 0) {
       notifications[notifications.length - 1].remove();
     }
-    
+
     appendChatBubble('assistant', result.text);
     speakResponse(result.text);
-    
+
   } catch (err) {
     console.error('Error querying assistant:', err);
     appendChatBubble('assistant', 'Communication error. Please check your network or try again.');
@@ -393,9 +395,9 @@ async function queryAssistant(messageText) {
 async function recalculateActiveRoute() {
   if (!activePathData) return;
   const section = activePathData.destination_section;
-  
+
   appendChatBubble('tool-notification', `Recalculating path for Section ${section}...`);
-  
+
   const apiKey = localStorage.getItem('gemini_api_key') || '';
   try {
     const response = await fetch('/api/chat/fan', {
@@ -419,17 +421,17 @@ async function recalculateActiveRoute() {
 // Render dynamic path on SVG
 function drawReroute(route) {
   activePathData = route;
-  
+
   const coords = route.path;
   if (!coords || coords.length < 2) return;
-  
+
   let dAttr = `M ${coords[0][0]} ${coords[0][1]}`;
   for (let i = 1; i < coords.length; i++) {
     dAttr += ` L ${coords[i][0]} ${coords[i][1]}`;
   }
-  
+
   fanPath.setAttribute('d', dAttr);
-  
+
   if (route.rerouted) {
     fanPath.setAttribute('stroke', 'var(--status-red)');
     routeBadge.textContent = 'Congestion Reroute';
@@ -439,16 +441,16 @@ function drawReroute(route) {
     routeBadge.textContent = 'Direct Route';
     routeBadge.className = 'route-badge direct';
   }
-  
+
   userPin.setAttribute('transform', `translate(${coords[0][0]}, ${coords[0][1]})`);
-  
+
   // Update details card
   routeHeading.textContent = `Route to Section ${route.destination_section}`;
   routeTime.textContent = route.duration_minutes;
   routeDistance.textContent = route.distance_meters;
   routeInstructions.textContent = route.instructions;
   routePanel.classList.remove('hidden');
-  
+
   appendChatBubble('tool-notification', `Path visualizer updated. Route plotted through ${route.gate_used}.`);
 
   // Sync with 3D model if active
@@ -462,7 +464,7 @@ function clearRoute() {
   fanPath.setAttribute('d', '');
   routePanel.classList.add('hidden');
   userPin.setAttribute('transform', 'translate(200, 420)');
-  
+
   if (stadium3d) {
     stadium3d.clearPath3D();
   }
@@ -504,15 +506,15 @@ function clearDrawerKey() {
 // Map 2D / 3D View Toggler (Version 2.2)
 function toggleMapView(view) {
   currentMapView = view;
-  
+
   const btn2D = document.getElementById('btn-view-2d');
   const btn3D = document.getElementById('btn-view-3d');
   const svgMap = document.getElementById('stadium-map');
   const threeContainer = document.getElementById('three-container');
-  
+
   btn2D.classList.remove('active-low');
   btn3D.classList.remove('active-low');
-  
+
   if (view === '2d') {
     btn2D.classList.add('active-low');
     svgMap.classList.remove('hidden');
@@ -521,13 +523,13 @@ function toggleMapView(view) {
     btn3D.classList.add('active-low');
     svgMap.classList.add('hidden');
     threeContainer.classList.remove('hidden');
-    
+
     // Initialize 3D on-demand
     if (!stadium3d) {
       stadium3d = new Stadium3D('three-container');
       fetchSensorBaseline(); // sync gate colors in 3D
     }
-    
+
     // If a path is already drawn, render it immediately in 3D
     if (activePathData) {
       stadium3d.drawPath3D(activePathData.path, activePathData.rerouted);

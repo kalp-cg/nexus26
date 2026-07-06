@@ -6,6 +6,8 @@
  * @version 2.5.0
  */
 
+/* eslint-disable no-unused-vars */
+
 'use strict';
 
 // State and connection
@@ -51,7 +53,7 @@ function configureAgentModeLabel() {
 function connectWebSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.host}`;
-  
+
   socket = new WebSocket(wsUrl);
 
   socket.onopen = () => {
@@ -71,53 +73,54 @@ function connectWebSocket() {
     try {
       const msg = JSON.parse(event.data);
       console.log('[WS] Received message:', msg);
-      
+
       switch (msg.type) {
-        case 'SENSOR_UPDATE':
-          updateHeatmapVisuals(msg.data.gates);
-          updateTestBenchCounters(msg.data.gates);
-          // Check if any gates just crossed into critical and push an operational alert
-          msg.data.gates.forEach(gate => {
-            if (gate.congestion_level === 'critical') {
-              pushSystemAlert(`Gate ${gate.gate_id} count surge (${gate.current_count}/hr). Wait time: ${gate.avg_wait_min}m.`);
-            }
-          });
-          updateKpiStats();
-          break;
-        case 'NEW_REPORT':
-          activeReports.unshift(msg.data);
-          prependAlertToFeed(msg.data);
-          updateAlertCounter();
-          refreshMapLayerHighlights();
-          updateKpiStats();
-          break;
-        case 'DISPATCH_VOLUNTEER':
-          const rep = activeReports.find(x => x.report_id === msg.data.report_id);
-          if (rep) {
-            rep.status = msg.data.status;
-            rep.assigned_volunteer = msg.data.assigned_volunteer;
+      case 'SENSOR_UPDATE':
+        updateHeatmapVisuals(msg.data.gates);
+        updateTestBenchCounters(msg.data.gates);
+        // Check if any gates just crossed into critical and push an operational alert
+        msg.data.gates.forEach(gate => {
+          if (gate.congestion_level === 'critical') {
+            pushSystemAlert(`Gate ${gate.gate_id} count surge (${gate.current_count}/hr). Wait time: ${gate.avg_wait_min}m.`);
           }
-          updateAlertDispatchStatus(msg.data);
-          updateAlertCounter();
-          refreshMapLayerHighlights();
-          updateKpiStats();
-          break;
-        case 'EMERGENCY_BROADCAST':
-          appendConsoleBubble('assistant', `EMERGENCY ALERT BROADCASTED: "${msg.data.message}"`);
-          break;
-        case 'TRANSIT_UPDATE':
-          updateKpiStats();
-          break;
-        case 'RESET_SYSTEM':
-          activeReports = msg.data.reports || [];
-          updateHeatmapVisuals(msg.data.sensors.gates);
-          updateTestBenchCounters(msg.data.sensors.gates);
-          loadReportsList(activeReports);
-          updateAlertCounter();
-          refreshMapLayerHighlights();
-          updateKpiStats();
-          appendConsoleBubble('assistant', 'SYSTEM DATA RESET: Baseline operating metrics loaded. Sensors normalized.');
-          break;
+        });
+        updateKpiStats();
+        break;
+      case 'NEW_REPORT':
+        activeReports.unshift(msg.data);
+        prependAlertToFeed(msg.data);
+        updateAlertCounter();
+        refreshMapLayerHighlights();
+        updateKpiStats();
+        break;
+      case 'DISPATCH_VOLUNTEER': {
+        const rep = activeReports.find(x => x.report_id === msg.data.report_id);
+        if (rep) {
+          rep.status = msg.data.status;
+          rep.assigned_volunteer = msg.data.assigned_volunteer;
+        }
+        updateAlertDispatchStatus(msg.data);
+        updateAlertCounter();
+        refreshMapLayerHighlights();
+        updateKpiStats();
+        break;
+      }
+      case 'EMERGENCY_BROADCAST':
+        appendConsoleBubble('assistant', `EMERGENCY ALERT BROADCASTED: "${msg.data.message}"`);
+        break;
+      case 'TRANSIT_UPDATE':
+        updateKpiStats();
+        break;
+      case 'RESET_SYSTEM':
+        activeReports = msg.data.reports || [];
+        updateHeatmapVisuals(msg.data.sensors.gates);
+        updateTestBenchCounters(msg.data.sensors.gates);
+        loadReportsList(activeReports);
+        updateAlertCounter();
+        refreshMapLayerHighlights();
+        updateKpiStats();
+        appendConsoleBubble('assistant', 'SYSTEM DATA RESET: Baseline operating metrics loaded. Sensors normalized.');
+        break;
       }
     } catch (err) {
       console.error('[WS] Error processing message:', err);
@@ -135,14 +138,14 @@ async function fetchInitialData() {
       updateHeatmapVisuals(sensorData.gates);
       updateTestBenchCounters(sensorData.gates);
     }
-    
+
     // Fetch reports
     const reportRes = await fetch('/api/reports');
     const reportData = await reportRes.json();
     if (reportData) {
       loadReportsList(reportData);
     }
-    
+
     updateKpiStats();
   } catch (err) {
     console.error('Error fetching initial data:', err);
@@ -158,7 +161,7 @@ function updateHeatmapVisuals(gates) {
         circle.setAttribute('fill', 'var(--status-red)');
         circle.setAttribute('stroke', '#fff');
         // Add a pulsing effect to critical gates
-        circle.innerHTML = `<animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite" />`;
+        circle.innerHTML = '<animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite" />';
       } else if (gate.congestion_level === 'high') {
         circle.setAttribute('fill', '#ff7a00');
         circle.removeAttribute('stroke');
@@ -250,17 +253,17 @@ function updateAlertCounter() {
 function prependAlertToFeed(report) {
   const item = document.createElement('div');
   item.id = `alert-${report.report_id}`;
-  
+
   const date = new Date(report.timestamp);
   const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  
+
   const isDispatched = report.status === 'dispatched';
   const severityClass = isDispatched ? 'severity-dispatched' : `severity-${report.status}`;
-  
+
   let labelPrefix = 'INFO';
   let badgeText = 'report';
   let badgeClass = 'info';
-  
+
   if (report.issue_type === 'overflowing_bin') { labelPrefix = 'WASTE'; badgeText = 'sustainability'; badgeClass = 'warning'; }
   else if (report.issue_type === 'crowd_surge') { labelPrefix = 'SURGE'; badgeText = 'crowd surge'; badgeClass = 'danger'; }
   else if (report.issue_type === 'medical') { labelPrefix = 'MEDICAL'; badgeText = 'medical alert'; badgeClass = 'danger'; }
@@ -288,7 +291,7 @@ function prependAlertToFeed(report) {
       </button>
     </div>
   `;
-  
+
   alertsList.prepend(item);
 }
 
@@ -299,9 +302,9 @@ function pushSystemAlert(message) {
 
   const item = document.createElement('div');
   item.className = 'alert-item severity-critical';
-  
+
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  
+
   item.innerHTML = `
     <div class="alert-meta">
       <span>ID: SYSTEM ALERT</span>
@@ -460,14 +463,14 @@ async function resetSystemState() {
 // Visual Map Layer Controls (Version 2)
 function setMapLayer(layerName) {
   activeMapLayer = layerName;
-  
+
   document.getElementById('layer-btn-crowd').classList.remove('active-low');
   document.getElementById('layer-btn-waste').classList.remove('active-low');
   document.getElementById('layer-btn-security').classList.remove('active-low');
-  
+
   const activeBtn = document.getElementById(`layer-btn-${layerName}`);
   if (activeBtn) activeBtn.classList.add('active-low');
-  
+
   refreshMapLayerHighlights();
 }
 
@@ -476,15 +479,15 @@ function refreshMapLayerHighlights() {
   document.querySelectorAll('.section-label circle').forEach(circle => {
     circle.classList.remove('section-highlight-active', 'section-highlight-warning');
   });
-  
+
   if (activeMapLayer === 'crowd') return; // Rely on gate circles
-  
+
   activeReports.forEach(report => {
     if (report.status === 'dispatched') return; // Skip resolved/assigned logs for mapping clutter
-    
+
     const zoneText = report.zone.toLowerCase();
     const detailText = report.text_raw.toLowerCase();
-    
+
     let sectionMatched = null;
     const match = (zoneText + ' ' + detailText).match(/(?:sec-|section|s|sección|seccion)\s*(\d+)/i);
     if (match) {
@@ -493,7 +496,7 @@ function refreshMapLayerHighlights() {
       if (zoneText.includes('north')) sectionMatched = '118';
       else if (zoneText.includes('south')) sectionMatched = '102';
     }
-    
+
     if (sectionMatched) {
       const secCircleG = document.getElementById(`sec-${sectionMatched}`);
       if (secCircleG) {
@@ -518,9 +521,9 @@ async function sendEmergencyBroadcast() {
     alert('Please enter a broadcast message.');
     return;
   }
-  
+
   input.value = '';
-  
+
   try {
     const res = await fetch('/api/broadcast', {
       method: 'POST',
@@ -546,7 +549,7 @@ async function updateKpiStats() {
   const incidentsEl = document.getElementById('kpi-incidents-count');
   const volunteersEl = document.getElementById('kpi-volunteers-count');
   const transitEl = document.getElementById('kpi-transit-status');
-  
+
   if (!waitEl) return;
 
   // 1. Avg Wait Time KPI
@@ -558,13 +561,15 @@ async function updateKpiStats() {
       data.gates.forEach(g => totalWait += g.avg_wait_min);
       const avg = (totalWait / data.gates.length).toFixed(1);
       waitEl.textContent = `${avg}m avg`;
-      
+
       waitEl.className = 'kpi-value';
       if (parseFloat(avg) > 15) waitEl.classList.add('critical');
       else if (parseFloat(avg) > 8) waitEl.classList.add('warning');
       else waitEl.classList.add('stable');
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error(e);
+  }
 
   // 2. Open Incidents KPI
   const openCount = activeReports.filter(r => r.status !== 'dispatched').length;
@@ -596,7 +601,9 @@ async function updateKpiStats() {
         transitEl.className = 'kpi-value stable';
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 // Trigger Simulator Demo Presets
@@ -617,7 +624,9 @@ async function triggerScenario(type) {
           text_raw: 'Critical crowd congestion buildup. Dynamic turnstiles experiencing slow read rates.'
         })
       });
-    } catch(e) {}
+    } catch (e) {
+      console.error(e);
+    }
     // 3. Broadcast safety warning
     try {
       await fetch('/api/broadcast', {
@@ -627,10 +636,12 @@ async function triggerScenario(type) {
           message: 'Gate A1 is CLOSED due to heavy congestion. All ticket holders redirect to Gate A2.'
         })
       });
-    } catch(e) {}
+    } catch (e) {
+      console.error(e);
+    }
 
     appendConsoleBubble('assistant', 'Surge Preset executed. Gate A1 red heatmap pulsed, staff logged report, and fan companions rerouted.');
-  } 
+  }
   else if (type === 'waste') {
     // 1. File overflowing bin report at Section 118
     try {
@@ -643,13 +654,15 @@ async function triggerScenario(type) {
           text_raw: 'Overflowing recycle bins next to concession stand 4; waste spilling onto concourse corridor.'
         })
       });
-    } catch(e) {}
-    
+    } catch (e) {
+      console.error(e);
+    }
+
     // 2. Switch map layer to show waste alerts
     setMapLayer('waste');
-    
+
     appendConsoleBubble('assistant', 'Waste Preset executed. Incident ticket queued and map layer auto-switched to highlight Section 118.');
-  } 
+  }
   else if (type === 'transit') {
     // 1. Delay subway line K
     try {
@@ -658,7 +671,9 @@ async function triggerScenario(type) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ line: 'K Line', status: 'delayed', delay_min: 25 })
       });
-    } catch(e) {}
+    } catch (e) {
+      console.error(e);
+    }
     // 2. File transit report
     try {
       await fetch('/api/reports', {
@@ -670,7 +685,9 @@ async function triggerScenario(type) {
           text_raw: 'Inglewood subway Line K delayed 25m. Transit staff coordinating additional bus shuttles.'
         })
       });
-    } catch(e) {}
+    } catch (e) {
+      console.error(e);
+    }
     // 3. Broadcast travel notice
     try {
       await fetch('/api/broadcast', {
@@ -680,7 +697,9 @@ async function triggerScenario(type) {
           message: 'Subway Line K delayed 25m. Please proceed to shuttle bus gates for route connections.'
         })
       });
-    } catch(e) {}
+    } catch (e) {
+      console.error(e);
+    }
 
     appendConsoleBubble('assistant', 'Transit Preset executed. Live schedule delay posted, incident ticket logged, and fans notified.');
   }
@@ -722,15 +741,15 @@ function clearDrawerKey() {
 // Map 2D / 3D View Toggler (Version 2.2)
 function toggleMapView(view) {
   currentMapView = view;
-  
+
   const btn2D = document.getElementById('btn-view-2d');
   const btn3D = document.getElementById('btn-view-3d');
   const svgMap = document.getElementById('stadium-heatmap');
   const threeContainer = document.getElementById('three-container');
-  
+
   btn2D.classList.remove('active-low');
   btn3D.classList.remove('active-low');
-  
+
   if (view === '2d') {
     btn2D.classList.add('active-low');
     svgMap.classList.remove('hidden');
@@ -739,7 +758,7 @@ function toggleMapView(view) {
     btn3D.classList.add('active-low');
     svgMap.classList.add('hidden');
     threeContainer.classList.remove('hidden');
-    
+
     // Initialize 3D on-demand
     if (!stadium3d) {
       stadium3d = new Stadium3D('three-container');

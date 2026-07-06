@@ -20,10 +20,10 @@
       </a>
     </div>
     <div style="display: flex; gap: 1rem; align-items: center;">
-      <button class="btn-settings" onclick="toggleApiDrawer()" title="Configure Gemini API Key">
+      <button class="btn-settings" onclick="toggleApiDrawer()" title="Configure Gemini API Key" aria-label="Configure Gemini API Key">
         Key Config
       </button>
-      <button class="ctrl-btn" onclick="resetSystemState()" style="padding: 0.45rem 1rem; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: var(--status-red); font-weight: 700;">
+      <button class="ctrl-btn" onclick="resetSystemState()" style="padding: 0.45rem 1rem; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: var(--status-red); font-weight: 700;" aria-label="Reset System Operations Data">
         Reset Operations Data
       </button>
       <div class="conn-status">
@@ -76,13 +76,13 @@
         <!-- Visual Map Layer Selector & View Toggle -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
           <div class="layer-selector" style="display:flex; gap:0.25rem; background:rgba(255,255,255,0.04); padding:0.15rem; border-radius:4px; border:1px solid var(--border-light);">
-            <button class="ctrl-btn active-low" id="layer-btn-crowd" onclick="setMapLayer('crowd')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">Crowd</button>
-            <button class="ctrl-btn" id="layer-btn-waste" onclick="setMapLayer('waste')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">Waste</button>
-            <button class="ctrl-btn" id="layer-btn-security" onclick="setMapLayer('security')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">Security</button>
+            <button class="ctrl-btn active-low" id="layer-btn-crowd" onclick="setMapLayer('crowd')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Show Crowd Layer Heatmap">Crowd</button>
+            <button class="ctrl-btn" id="layer-btn-waste" onclick="setMapLayer('waste')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Show Waste Layer Heatmap">Waste</button>
+            <button class="ctrl-btn" id="layer-btn-security" onclick="setMapLayer('security')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Show Security Layer Heatmap">Security</button>
           </div>
           <div class="layer-selector" style="display:flex; gap:0.25rem; background:rgba(255,255,255,0.04); padding:0.15rem; border-radius:4px; border:1px solid var(--border-light);">
-            <button class="ctrl-btn active-low" id="btn-view-2d" onclick="toggleMapView('2d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">2D Blueprint</button>
-            <button class="ctrl-btn" id="btn-view-3d" onclick="toggleMapView('3d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">3D Model</button>
+            <button class="ctrl-btn active-low" id="btn-view-2d" onclick="toggleMapView('2d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Switch to 2D Map View">2D Blueprint</button>
+            <button class="ctrl-btn" id="btn-view-3d" onclick="toggleMapView('3d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;" aria-label="Switch to 3D Map View">3D Model</button>
           </div>
         </div>
 
@@ -195,9 +195,9 @@
         <div class="preset-simulator" style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border-light);">
           <h4 style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">Quick Scenario Presets</h4>
           <div class="preset-grid">
-            <button class="preset-btn" onclick="triggerScenario('surge')">1. Gate Surge</button>
-            <button class="preset-btn" onclick="triggerScenario('waste')">2. Trash Hazard</button>
-            <button class="preset-btn" onclick="triggerScenario('transit')">3. Metro Delay</button>
+            <button class="preset-btn" onclick="triggerScenario('surge')" aria-label="Simulate Gate Crowd Surge Scenario">1. Gate Surge</button>
+            <button class="preset-btn" onclick="triggerScenario('waste')" aria-label="Simulate Waste Spill Hazard Scenario">2. Trash Hazard</button>
+            <button class="preset-btn" onclick="triggerScenario('transit')" aria-label="Simulate Metro Train Delay Scenario">3. Metro Delay</button>
           </div>
         </div>
 
@@ -206,7 +206,7 @@
           <h4 style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">Emergency Broadcast Control</h4>
           <div style="display:flex; gap:0.5rem;">
             <input type="text" id="broadcast-msg-input" aria-label="Emergency Broadcast Message Input" placeholder="Type critical warning for all fans..." style="flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem 0.75rem; font-size:0.8rem; outline:none;" />
-            <button class="btn btn-primary" onclick="sendEmergencyBroadcast()" style="padding:0.4rem 1rem; font-size:0.8rem; border-radius:6px; font-weight:700; background:var(--status-red); color:#fff;">
+            <button class="btn btn-primary" onclick="sendEmergencyBroadcast()" style="padding:0.4rem 1rem; font-size:0.8rem; border-radius:6px; font-weight:700; background:var(--status-red); color:#fff;" aria-label="Broadcast Emergency Warning to Fans">
               Broadcast Alert
             </button>
           </div>
@@ -236,7 +236,7 @@
 
         <div class="console-input-row">
           <input type="text" id="console-input" aria-label="Operations Console Input" placeholder="Enter operational command or query (e.g. 'Show congested gates')..." onkeydown="handleConsoleKey(event)" />
-          <button class="btn btn-primary" onclick="sendConsoleCommand()" style="border-radius:6px; font-weight:700;">Query</button>
+          <button class="btn btn-primary" onclick="sendConsoleCommand()" style="border-radius:6px; font-weight:700;" aria-label="Send Query to Console">Query</button>
         </div>
       </div>
     </section>

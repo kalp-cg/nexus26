@@ -6,11 +6,19 @@
     "browser": true
   },
   "extends": "eslint:recommended",
+  "globals": {
+    "THREE": "readonly",
+    "Stadium3D": "readonly",
+    "SpeechSynthesisUtterance": "readonly",
+    "window": "readonly",
+    "document": "readonly",
+    "localStorage": "readonly"
+  },
   "parserOptions": {
     "ecmaVersion": "latest"
   },
   "rules": {
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_|next" }],
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_|next", "varsIgnorePattern": "^_" }],
     "no-console": "off",
     "semi": ["error", "always"],
     "quotes": ["warn", "single", { "avoidEscape": true }],

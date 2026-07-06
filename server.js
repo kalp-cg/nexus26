@@ -154,24 +154,29 @@ app.use(express.json({ limit: '100kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-// Whitelist of permitted JSON database files
+// Whitelist of permitted JSON database and compliance files
 const ALLOWED_FILES = [
   'gate_sensors.json',
   'volunteer_reports.json',
   'transit_feeds.json',
   'accessibility_routes.json',
-  'stadium_map_coords.json'
+  'stadium_map_coords.json',
+  'fifa_compliance_manual.md'
 ];
 
 // O(1) In-Memory DB cache
 const dbCache = {};
 
-// Load baseline JSONs into memory cache
+// Load baseline JSONs / text manuals into memory cache
 ALLOWED_FILES.forEach(fileName => {
   try {
     const filePath = path.join(__dirname, 'data', fileName);
     const content = fs.readFileSync(filePath, 'utf8');
-    dbCache[fileName] = JSON.parse(content);
+    if (fileName.endsWith('.json')) {
+      dbCache[fileName] = JSON.parse(content);
+    } else {
+      dbCache[fileName] = content;
+    }
   } catch (error) {
     console.error(`[DB Cache Seed Failed] ${fileName}:`, error);
     dbCache[fileName] = null;
@@ -236,7 +241,7 @@ const broadcast = (data) => {
 wss.on('connection', (ws) => {
   console.log('[WS] Client connected');
   ws.send(JSON.stringify({ type: 'WELCOME', message: 'Connected to Nexus26 Live Spine' }));
-  
+
   ws.on('close', () => {
     console.log('[WS] Client disconnected');
   });
@@ -509,7 +514,7 @@ const local_check_gate_congestion = async (stadium_id, gate_id) => {
  * @param {string} city - City name for transit lookup
  * @returns {Promise<Object>} Transit feed object with lines array
  */
-const local_get_transit_status = async (city) => {
+const local_get_transit_status = async (_city) => {
   return readJSON('transit_feeds.json') || { error: 'Transit data unavailable' };
 };
 
@@ -536,7 +541,7 @@ const local_log_volunteer_report = async (zone, issue_type, text_raw) => {
   const reports = readJSON('volunteer_reports.json') || [];
   const newReport = {
     report_id: `VR-${Math.floor(1000 + Math.random() * 9000)}`,
-    volunteer_id: `V-AI`,
+    volunteer_id: 'V-AI',
     zone: zone || 'Unknown Concourse',
     issue_type: issue_type || 'other',
     text_raw: text_raw || 'Unspecified report',
@@ -578,12 +583,12 @@ const local_dispatch_volunteer = async (report_id, zone) => {
   const reports = readJSON('volunteer_reports.json') || [];
   const report = reports.find(r => r.report_id === report_id);
   if (!report) return { error: `Report ${report_id} not found` };
-  
+
   const names = ['Dave', 'Carlos', 'Sarah', 'Jessica', 'Amir'];
   const volunteer = names[Math.floor(Math.random() * names.length)];
   report.status = 'dispatched';
   report.assigned_volunteer = `${volunteer} (Area ${zone || report.zone})`;
-  
+
   writeJSON('volunteer_reports.json', reports);
   broadcast({ type: 'DISPATCH_VOLUNTEER', data: report });
   return report;
@@ -614,10 +619,10 @@ const local_generate_reroute = async (stadium_id, destination_section, current_l
   // Find gate congestion
   const checkGateCongestion = (gId) => sensorData.gates.find(g => g.gate_id === gId);
   const origGate = checkGateCongestion(originalGateId);
-  
+
   let gateUsedId = originalGateId;
   let rerouted = false;
-  
+
   const threshold = avoid_congestion_above || 'high';
   const isCongested = (g) => {
     if (!g) return false;
@@ -642,15 +647,15 @@ const local_generate_reroute = async (stadium_id, destination_section, current_l
 
   const gateCoords = mapCoords.gates[gateUsedId];
   const sectionCoords = mapCoords.sections[section] || mapCoords.sections['101'];
-  
+
   // Format coordinate paths
   // Start from current_location (e.g. Transit center [200, 420] or Rideshare [380, 380])
   const startPt = current_location_coords || [200, 420];
   const path = [startPt, [gateCoords.x, gateCoords.y], [sectionCoords.x, sectionCoords.y]];
-  
+
   const duration = rerouted ? 11 : 6;
   const distance = rerouted ? 850 : 450;
-  
+
   const response = {
     stadium_id,
     destination_section: section,
@@ -660,11 +665,11 @@ const local_generate_reroute = async (stadium_id, destination_section, current_l
     path,
     distance_meters: distance,
     duration_minutes: duration,
-    instructions: rerouted 
+    instructions: rerouted
       ? `Rerouted via ${gateUsedId} to avoid ${origGate.congestion_level} congestion at ${originalGateId}. Walking time is approx. ${duration} mins.`
       : `Route clear. Walk through ${gateUsedId} directly to Section ${section}. Walking time is approx. ${duration} mins.`
   };
-  
+
   broadcast({ type: 'REROUTE_FAN', data: response });
   return response;
 };
@@ -677,7 +682,7 @@ app.post('/api/chat/:persona', async (req, res) => {
   const userApiKey = req.body.userApiKey; // Keep API Key raw, never leak or mutate
   const current_location = req.body.current_location;
   const accessibility_enabled = req.body.accessibility_enabled;
-  
+
   const activeKey = userApiKey || process.env.GEMINI_API_KEY;
   const sanitizedHistory = (history || []).map(h => ({
     role: sanitizeInput(h.role),
@@ -704,9 +709,10 @@ app.post('/api/chat/:persona', async (req, res) => {
 // Run Gemini Chat Agent with Function Calling Loop
 async function runGeminiAgent(persona, message, history, apiKey, currentLocation, accessibilityEnabled) {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const sysPrompt = persona === 'fan' 
-    ? FAN_SYSTEM_PROMPT + (accessibilityEnabled ? "\nNote: Fan has accessibility needs. Prioritize get_accessible_route." : "")
-    : COMMAND_SYSTEM_PROMPT;
+  const complianceManual = readJSON('fifa_compliance_manual.md') || '';
+  const sysPrompt = (persona === 'fan'
+    ? FAN_SYSTEM_PROMPT + (accessibilityEnabled ? '\nNote: Fan has accessibility needs. Prioritize get_accessible_route.' : '')
+    : COMMAND_SYSTEM_PROMPT) + `\n\nOfficial Venue Regulations & Compliance SOPs:\n${complianceManual}`;
 
   const model = genAI.getGenerativeModel({
     model: 'gemini-1.5-flash',
@@ -716,95 +722,95 @@ async function runGeminiAgent(persona, message, history, apiKey, currentLocation
   const tools = [{
     functionDeclarations: [
       {
-        name: "check_gate_congestion",
-        description: "Returns live congestion level, wait time, and capacity for one or all gates at SoFi Stadium.",
+        name: 'check_gate_congestion',
+        description: 'Returns live congestion level, wait time, and capacity for one or all gates at SoFi Stadium.',
         parameters: {
-          type: "OBJECT",
+          type: 'OBJECT',
           properties: {
-            stadium_id: { type: "STRING" },
-            gate_id: { type: "STRING", description: "Optional. Omit to get all gates." }
+            stadium_id: { type: 'STRING' },
+            gate_id: { type: 'STRING', description: 'Optional. Omit to get all gates.' }
           },
-          required: ["stadium_id"]
+          required: ['stadium_id']
         }
       },
       {
-        name: "get_transit_status",
-        description: "Returns live delay/status for transit lines serving a given stadium/city.",
+        name: 'get_transit_status',
+        description: 'Returns live delay/status for transit lines serving a given stadium/city.',
         parameters: {
-          type: "OBJECT",
+          type: 'OBJECT',
           properties: {
-            city: { type: "STRING" }
+            city: { type: 'STRING' }
           },
-          required: ["city"]
+          required: ['city']
         }
       },
       {
-        name: "generate_reroute",
-        description: "Given a destination section and current location, returns walking coordinates and routing directions that avoid gates above a congestion threshold.",
+        name: 'generate_reroute',
+        description: 'Given a destination section and current location, returns walking coordinates and routing directions that avoid gates above a congestion threshold.',
         parameters: {
-          type: "OBJECT",
+          type: 'OBJECT',
           properties: {
-            stadium_id: { type: "STRING" },
-            destination_section: { type: "STRING" },
+            stadium_id: { type: 'STRING' },
+            destination_section: { type: 'STRING' },
             current_location_coords: {
-              type: "ARRAY",
-              items: { type: "NUMBER" },
-              description: "Array of two numbers [x, y]. Coordinates on stadium grid."
+              type: 'ARRAY',
+              items: { type: 'NUMBER' },
+              description: 'Array of two numbers [x, y]. Coordinates on stadium grid.'
             },
-            avoid_congestion_above: { type: "STRING", enum: ["high", "critical"] }
+            avoid_congestion_above: { type: 'STRING', enum: ['high', 'critical'] }
           },
-          required: ["stadium_id", "destination_section", "current_location_coords"]
+          required: ['stadium_id', 'destination_section', 'current_location_coords']
         }
       },
       {
-        name: "get_accessible_route",
-        description: "Returns wheelchair-accessible ramp and rideshare pickup coordinates nearest to a gate.",
+        name: 'get_accessible_route',
+        description: 'Returns wheelchair-accessible ramp and rideshare pickup coordinates nearest to a gate.',
         parameters: {
-          type: "OBJECT",
+          type: 'OBJECT',
           properties: {
-            gate_id: { type: "STRING" }
+            gate_id: { type: 'STRING' }
           },
-          required: ["gate_id"]
+          required: ['gate_id']
         }
       },
       {
-        name: "log_volunteer_report",
+        name: 'log_volunteer_report',
         description: "Files a structured issue report from a volunteer's free-text input, classified by issue type and zone.",
         parameters: {
-          type: "OBJECT",
+          type: 'OBJECT',
           properties: {
-            zone: { type: "STRING" },
+            zone: { type: 'STRING' },
             issue_type: {
-              type: "STRING",
-              enum: ["overflowing_bin", "crowd_surge", "medical", "accessibility_blocked", "other"]
+              type: 'STRING',
+              enum: ['overflowing_bin', 'crowd_surge', 'medical', 'accessibility_blocked', 'other']
             },
-            text_raw: { type: "STRING" }
+            text_raw: { type: 'STRING' }
           },
-          required: ["zone", "issue_type", "text_raw"]
+          required: ['zone', 'issue_type', 'text_raw']
         }
       },
       {
-        name: "query_open_reports",
-        description: "Lets Command Center staff ask questions about open reports, filtered by zone or issue type.",
+        name: 'query_open_reports',
+        description: 'Lets Command Center staff ask questions about open reports, filtered by zone or issue type.',
         parameters: {
-          type: "OBJECT",
+          type: 'OBJECT',
           properties: {
-            issue_type: { type: "STRING" },
-            zone: { type: "STRING" },
-            status: { type: "STRING", enum: ["open", "resolved", "all"] }
+            issue_type: { type: 'STRING' },
+            zone: { type: 'STRING' },
+            status: { type: 'STRING', enum: ['open', 'resolved', 'all'] }
           }
         }
       },
       {
-        name: "dispatch_volunteer",
-        description: "Assigns the nearest available volunteer to an open report.",
+        name: 'dispatch_volunteer',
+        description: 'Assigns the nearest available volunteer to an open report.',
         parameters: {
-          type: "OBJECT",
+          type: 'OBJECT',
           properties: {
-            report_id: { type: "STRING" },
-            zone: { type: "STRING" }
+            report_id: { type: 'STRING' },
+            zone: { type: 'STRING' }
           },
-          required: ["report_id"]
+          required: ['report_id']
         }
       }
     ]
@@ -845,21 +851,21 @@ async function runGeminiAgent(persona, message, history, apiKey, currentLocation
       console.log(`[Gemini Tool] Executing: ${name}`, args);
 
       try {
-        if (name === "check_gate_congestion") {
+        if (name === 'check_gate_congestion') {
           toolResult = await local_check_gate_congestion(args.stadium_id, args.gate_id);
-        } else if (name === "get_transit_status") {
+        } else if (name === 'get_transit_status') {
           toolResult = await local_get_transit_status(args.city);
-        } else if (name === "generate_reroute") {
+        } else if (name === 'generate_reroute') {
           // If coords not supplied, inject a reasonable default based on fan context
           const coords = args.current_location_coords || currentLocation || [200, 420];
           toolResult = await local_generate_reroute(args.stadium_id, args.destination_section, coords, args.avoid_congestion_above);
-        } else if (name === "get_accessible_route") {
+        } else if (name === 'get_accessible_route') {
           toolResult = await local_get_accessible_route(args.gate_id);
-        } else if (name === "log_volunteer_report") {
+        } else if (name === 'log_volunteer_report') {
           toolResult = await local_log_volunteer_report(args.zone, args.issue_type, args.text_raw);
-        } else if (name === "query_open_reports") {
+        } else if (name === 'query_open_reports') {
           toolResult = await local_query_open_reports(args.issue_type, args.zone, args.status);
-        } else if (name === "dispatch_volunteer") {
+        } else if (name === 'dispatch_volunteer') {
           toolResult = await local_dispatch_volunteer(args.report_id, args.zone);
         } else {
           toolResult = { error: 'Unknown function' };
@@ -890,10 +896,9 @@ async function runFallbackMockAgent(persona, message, currentLocation, accessibi
   const location = currentLocation || [200, 420]; // Default transit center
 
   if (persona === 'fan') {
-    // Detect Language
-    const isSpanish = (msgLower.includes('como') || msgLower.includes('puerta') || msgLower.includes('seccion') || msgLower.includes('estadio') || msgLower.includes('congestion') || msgLower.includes('ayuda'));
-    const isFrench = (msgLower.includes('comment') || msgLower.includes('porte') || msgLower.includes('section') || msgLower.includes('retard') || msgLower.includes('metro'));
-    
+    const isSpanish = (msgLower.includes('como') || msgLower.includes('cómo') || msgLower.includes('puerta') || msgLower.includes('seccion') || msgLower.includes('sección') || msgLower.includes('estadio') || msgLower.includes('congestion') || msgLower.includes('congestión') || msgLower.includes('ayuda'));
+    const isFrench = (msgLower.includes('comment') || msgLower.includes('porte') || msgLower.includes('section') || msgLower.includes('retard') || (msgLower.includes('metro') && !msgLower.includes('train')) || msgLower.includes('métro'));
+
     // Check for Wheelchair/Stroller Access
     if (accessibilityEnabled || msgLower.includes('wheelchair') || msgLower.includes('silla') || msgLower.includes('stroller') || msgLower.includes('ramp') || msgLower.includes('rampe')) {
       const dataA2 = await local_get_accessible_route('A2');
@@ -924,7 +929,7 @@ async function runFallbackMockAgent(persona, message, currentLocation, accessibi
     if (sectionMatch) {
       const section = sectionMatch[1];
       const routeInfo = await local_generate_reroute('sofi_stadium', section, location, 'high');
-      
+
       // Let's fire a WebSocket command to update client route
       broadcast({ type: 'REROUTE_FAN', data: routeInfo });
 
@@ -940,72 +945,86 @@ async function runFallbackMockAgent(persona, message, currentLocation, accessibi
     // Conversational Intents for Fallback Agent
     if (msgLower.includes('hello') || msgLower.includes('hi') || msgLower.includes('hey') || msgLower.includes('hola') || msgLower.includes('bonjour')) {
       if (isSpanish) {
-        return `¡Hola! Soy tu asistente de estadio Nexus26. ¿A qué sección vas hoy o qué información de transporte necesitas?`;
+        return '¡Hola! Soy tu asistente de estadio Nexus26. ¿A qué sección vas hoy o qué información de transporte necesitas?';
       } else if (isFrench) {
-        return `Bonjour! Je suis Nexus26, votre compagnon de stade. Quelle section ou porte cherchez-vous?`;
+        return 'Bonjour! Je suis Nexus26, votre compagnon de stade. Quelle section ou porte cherchez-vous?';
       } else {
-        return `Hello! I am Nexus26, your stadium operations companion. Which seat section or gate are you looking for?`;
+        return 'Hello! I am Nexus26, your stadium operations companion. Which seat section or gate are you looking for?';
       }
     }
-    
+
     if (msgLower.includes('food') || msgLower.includes('drink') || msgLower.includes('concession') || msgLower.includes('hungry') || msgLower.includes('restroom') || msgLower.includes('baño') || msgLower.includes('comida')) {
       if (isSpanish) {
-        return `Las concesiones de comida y los baños están disponibles en todos los niveles principales. El punto de comida más cercano está cerca de la Sección 102 (cerca de la entrada de la Puerta A1).`;
+        return 'Las concesiones de comida y los baños están disponibles en todos los niveles principales. El punto de comida más cercano está cerca de la Sección 102 (cerca de la entrada de la Puerta A1).';
       } else if (isFrench) {
-        return `Des concessions alimentaires et des toilettes sont situées à tous les niveaux. Le stand de nourriture le plus proche se trouve à côté de la Section 102.`;
+        return 'Des concessions alimentaires et des toilettes sont situées à tous les niveaux. Le stand de nourriture le plus proche se trouve à côté de la Section 102.';
       } else {
-        return `Concessions, snacks, and restrooms are situated on all main stadium levels. The nearest beverage station is adjacent to Section 102.`;
+        return 'Concessions, snacks, and restrooms are situated on all main stadium levels. The nearest beverage station is adjacent to Section 102.';
       }
     }
 
     if (msgLower.includes('exit') || msgLower.includes('leave') || msgLower.includes('salida') || msgLower.includes('salir') || msgLower.includes('sortir')) {
       if (isSpanish) {
-        return `Las salidas principales del estadio están ubicadas en las Puertas A1, A2 y B1. Consulta la ruta en el mapa para dirigirte a la salida más conveniente.`;
+        return 'Las salidas principales del estadio están ubicadas en las Puertas A1, A2 y B1. Consulta la ruta en el mapa para dirigirte a la salida más conveniente.';
       } else if (isFrench) {
-        return `Les sorties principales du stade sont situées aux Portes A1, A2 et B1. Veuillez consulter la carte pour l'itinéraire de sortie le plus proche.`;
+        return 'Les sorties principales du stade sont situées aux Portes A1, A2 et B1. Veuillez consulter la carte pour l\'itinéraire de sortie le plus proche.';
       } else {
-        return `Main stadium exits are located at Gate A1, Gate A2, and Gate B1. Check your map coordinates for the closest exit route from your section.`;
+        return 'Main stadium exits are located at Gate A1, Gate A2, and Gate B1. Check your map coordinates for the closest exit route from your section.';
       }
     }
 
     if (msgLower.includes('thank') || msgLower.includes('gracias') || msgLower.includes('merci') || msgLower.includes('danke')) {
       if (isSpanish) {
-        return `¡De nada! Disfruta del partido y avísame si necesitas algo más.`;
+        return '¡De nada! Disfruta del partido y avísame si necesitas algo más.';
       } else if (isFrench) {
-        return `De rien! Bon match et n'hésitez pas si vous avez d'autres questions!`;
+        return 'De rien! Bon match et n\'hésitez pas si vous avez d\'autres questions!';
       } else {
-        return `You are very welcome! Have a safe match day and let me know if you need anything else!`;
+        return 'You are very welcome! Have a safe match day and let me know if you need anything else!';
       }
     }
 
     // Check for capabilities query
     if (msgLower.includes('what') && (msgLower.includes('do') || msgLower.includes('can') || msgLower.includes('help') || msgLower.includes('feature') || msgLower.includes('service') || msgLower.includes('capability'))) {
       if (isSpanish) {
-        return `Puedo ayudarte a: 1. Navegar a cualquier sección (ej. 'Ir a la Sección 102') | 2. Ver retrasos de metro (ej. '¿El metro está retrasado?') | 3. Encontrar rampas accesibles (ej. 'Rampa de silla de ruedas') | 4. Ubicar puestos de comida.`;
+        return 'Puedo ayudarte a: 1. Navegar a cualquier sección (ej. \'Ir a la Sección 102\') | 2. Ver retrasos de metro (ej. \'¿El metro está retrasado?\') | 3. Encontrar rampas accesibles (ej. \'Rampa de silla de ruedas\') | 4. Ubicar puestos de comida.';
       } else {
-        return `I can help you: 1. Navigate to seat sections (e.g. 'Route to Section 102') | 2. Check live transit schedules ('Is the subway delayed?') | 3. Find accessibility ramps ('Wheelchair ramp') | 4. Locate concessions and exits.`;
+        return 'I can help you: 1. Navigate to seat sections (e.g. \'Route to Section 102\') | 2. Check live transit schedules (\'Is the subway delayed?\') | 3. Find accessibility ramps (\'Wheelchair ramp\') | 4. Locate concessions and exits.';
       }
     }
 
     // Check for match details
     if (msgLower.includes('match') || msgLower.includes('game') || msgLower.includes('who') || msgLower.includes('play') || msgLower.includes('stadium') || msgLower.includes('partido') || msgLower.includes('juego') || msgLower.includes('equipo')) {
       if (isSpanish) {
-        return `El partido de hoy es USA contra México en el Estadio SoFi. El inicio es a las 20:00.`;
+        return 'El partido de hoy es USA contra México en el Estadio SoFi. El inicio es a las 20:00.';
       } else {
-        return `Today's match is USA vs. Mexico here at SoFi Stadium. Kickoff is scheduled for 20:00 local time.`;
+        return 'Today\'s match is USA vs. Mexico here at SoFi Stadium. Kickoff is scheduled for 20:00 local time.';
+      }
+    }
+
+    // Check for compliance policy manual
+    if (msgLower.includes('policy') || msgLower.includes('manual') || msgLower.includes('sop') || msgLower.includes('compliance') || msgLower.includes('threshold') || msgLower.includes('rule')) {
+      if (isSpanish) {
+        return 'POLÍTICA DE CUMPLIMIENTO → 1. Vaciar contenedores dentro de 15 min. 2. Puerta crítica: espera > 20 min (desviar). 3. Asistente de movilidad para sillas de ruedas.';
+      } else {
+        return 'COMPLIANCE POLICY → 1. Empty waste bins within 15 mins. 2. Critical gate wait time is > 20 mins. 3. Assist wheelchair requests at non-ramp gates by guiding to Gate A2/B1.';
       }
     }
 
     if (isSpanish) {
-      return `Modo de contingencia Nexus26. Intenta escribir una de estas opciones: \n1. 'Ir a la Sección 102' (Navegación)\n2. 'Estado del metro' (Transporte)\n3. 'Rampa de silla de ruedas' (Accesibilidad)\n4. '¿Dónde hay comida?' (Servicios)`;
+      return 'Modo de contingencia Nexus26. Intenta escribir una de estas opciones: \n1. \'Ir a la Sección 102\' (Navegación)\n2. \'Estado del metro\' (Transporte)\n3. \'Rampa de silla de ruedas\' (Accesibilidad)\n4. \'¿Dónde hay comida?\' (Servicios)';
     } else {
-      return `Nexus26 Offline Contingency Mode. Try typing one of these exact queries to test features:\n1. 'Route to Section 102' (Plotted maps)\n2. 'Is the subway delayed?' (Transit logs)\n3. 'Wheelchair access ramp' (Accessibility path)\n4. 'Where is the food?' (Concession guidelines)`;
+      return 'Nexus26 Offline Contingency Mode. Try typing one of these exact queries to test features:\n1. \'Route to Section 102\' (Plotted maps)\n2. \'Is the subway delayed?\' (Transit logs)\n3. \'Wheelchair access ramp\' (Accessibility path)\n4. \'Where is the food?\' (Concession guidelines)';
     }
   }
 
   // COMMAND CENTER PERSONA MOCK AGENT
   // State answer format: [severity/count] → [specific zone/gate] → [recommended action]
   if (persona === 'command') {
+    // Compliance SOP / Policy manual queries
+    if (msgLower.includes('policy') || msgLower.includes('manual') || msgLower.includes('sop') || msgLower.includes('compliance') || msgLower.includes('threshold') || msgLower.includes('rule')) {
+      return 'COMPLIANCE SOP → 1. Bins must be emptied within 15 mins of alert. 2. Critical gate wait time is > 20 mins. 3. Gate design capacity is 4,000/hr. 4. Low: <1500, Medium: 1500-2500, High: 2500-3500, Critical: >3500 count/hr.';
+    }
+
     // 1. Congestion Questions
     if (msgLower.includes('congestion') || msgLower.includes('gate') || msgLower.includes('back') || msgLower.includes('crowd')) {
       const gates = await local_check_gate_congestion('sofi_stadium');
@@ -1017,7 +1036,7 @@ async function runFallbackMockAgent(persona, message, currentLocation, accessibi
       } else if (highGates.length > 0) {
         return `HIGH → Gate ${highGates[0].gate_id} shows ${highGates[0].current_count} count (${highGates[0].avg_wait_min}m wait) → Recommended Action: Monitor gate queue closely; prepare to direct volunteers to assist crowd flow.`;
       } else {
-        return `NORMAL → All gates showing low congestion (average wait < 4 mins) → Recommended Action: Maintain current staffing configurations.`;
+        return 'NORMAL → All gates showing low congestion (average wait < 4 mins) → Recommended Action: Maintain current staffing configurations.';
       }
     }
 
@@ -1034,7 +1053,7 @@ async function runFallbackMockAgent(persona, message, currentLocation, accessibi
       } else if (reports.length > 0) {
         return `WARNING → ${reports.length} pending operations reports in ${reports[0].zone} → Recommended Action: Review report ${reports[0].report_id} and dispatch volunteer.`;
       } else {
-        return `STABLE → 0 open operation reports on the logs → Recommended Action: No dispatch actions required.`;
+        return 'STABLE → 0 open operation reports on the logs → Recommended Action: No dispatch actions required.';
       }
     }
 
@@ -1050,7 +1069,7 @@ async function runFallbackMockAgent(persona, message, currentLocation, accessibi
       return `DISPATCHED → Report ${repId} assigned to ${res.assigned_volunteer} → Action: Volunteer en route; tracking status.`;
     }
 
-    return `COMMAND CORE → Nexus26 Active. Provide query:\n- Ask: "Which gates are backing up?"\n- Ask: "Which zones have overflowing bins?"\n- Command: "Dispatch volunteer to VR-1042"`;
+    return 'COMMAND CORE → Nexus26 Active. Provide query:\n- Ask: "Which gates are backing up?"\n- Ask: "Which zones have overflowing bins?"\n- Command: "Dispatch volunteer to VR-1042"';
   }
 
   return `System active. Configured for ${persona}.`;
@@ -1079,11 +1098,11 @@ app.use((err, req, res, next) => {
 // Start Server
 if (require.main === module) {
   server.listen(PORT, () => {
-    console.log(`=======================================================`);
-    console.log(` Nexus26 - World Cup Operations Spine Server`);
+    console.log('=======================================================');
+    console.log(' Nexus26 - World Cup Operations Spine Server');
     console.log(` Running on: http://localhost:${PORT}`);
     console.log(` WebSocket Spine: ws://localhost:${PORT}`);
-    console.log(`=======================================================`);
+    console.log('=======================================================');
   });
 }
 

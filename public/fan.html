@@ -46,12 +46,12 @@
         <!-- Controls Header: Lang & Accessibility -->
         <div class="fan-actions-row">
           <div class="lang-selector">
-            <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
-            <button class="lang-btn" onclick="setLanguage('es')">ES</button>
-            <button class="lang-btn" onclick="setLanguage('fr')">FR</button>
-            <button class="lang-btn" onclick="setLanguage('de')">DE</button>
+            <button class="lang-btn active" onclick="setLanguage('en')" aria-label="Set language to English">EN</button>
+            <button class="lang-btn" onclick="setLanguage('es')" aria-label="Set language to Spanish">ES</button>
+            <button class="lang-btn" onclick="setLanguage('fr')" aria-label="Set language to French">FR</button>
+            <button class="lang-btn" onclick="setLanguage('de')" aria-label="Set language to German">DE</button>
           </div>
-          <button class="accessibility-toggle" id="access-toggle" onclick="toggleAccessibility()" title="Toggle Wheelchair / Stroller Accessible Rerouting">
+          <button class="accessibility-toggle" id="access-toggle" onclick="toggleAccessibility()" title="Toggle Wheelchair / Stroller Accessible Rerouting" aria-label="Toggle Wheelchair or Stroller Accessible Rerouting">
             Route: Standard
           </button>
         </div>
@@ -208,7 +208,7 @@
           
           <div class="chat-input-row">
             <input type="text" id="chat-input" aria-label="Type wayfinding query" placeholder="Type message..." onkeydown="handleInputKey(event)" />
-            <button class="send-btn" onclick="sendTextMessage()" title="Send Text">
+            <button class="send-btn" onclick="sendTextMessage()" title="Send Text" aria-label="Send Text Message">
               SEND
             </button>
           </div>
@@ -216,7 +216,7 @@
 
         <!-- Mic Button for Speech simulation -->
         <div class="mic-btn-container">
-          <button class="mic-btn" id="voice-btn" onclick="startVoiceAssistant()" title="Tap to Speak">
+          <button class="mic-btn" id="voice-btn" onclick="startVoiceAssistant()" title="Tap to Speak" aria-label="Tap to Speak Voice Input">
             TAP TO SPEAK
           </button>
         </div>
