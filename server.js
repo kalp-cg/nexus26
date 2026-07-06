@@ -1,3 +1,14 @@
+/**
+ * @fileoverview Nexus26 - FIFA World Cup 2026 AI Operations Spine Server
+ * @description Real-time WebSocket event bus connecting the Fan Companion and
+ *   Command Center dashboards. Handles REST API data operations, Gemini AI
+ *   function-calling integration, input sanitization, and security enforcement.
+ * @version 2.5.0
+ * @author Nexus26 Team
+ */
+
+'use strict';
+
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
@@ -12,48 +23,103 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+/** @constant {number|string} PORT - Server listening port from env or default 3000 */
 const PORT = process.env.PORT || 3000;
 
-// HTTP Security Headers Middleware (Version 2.3)
+/**
+ * HTTP Security Headers Middleware
+ * Sets industry-standard headers to protect against XSS, clickjacking,
+ * MIME-sniffing, information leakage, and code injection attacks.
+ */
 app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ws: wss: https://generativelanguage.googleapis.com; img-src 'self' data:;");
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
+  res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "connect-src 'self' ws: wss: https://generativelanguage.googleapis.com; " +
+    "img-src 'self' data:; " +
+    "frame-ancestors 'none';"
+  );
   next();
 });
 
-// XSS Sanitizer Input Escaper Helper
+/**
+ * CORS Middleware - Restrict cross-origin access to known safe origins.
+ * Allows the Render deployment and localhost development origins.
+ */
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    'https://nexus26.onrender.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+  ];
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
+
+/**
+ * XSS Input Sanitizer — escapes dangerous HTML characters from user-supplied strings.
+ * Applied to all POST body parameters before any database writes or broadcasts.
+ * @param {*} val - The value to sanitize
+ * @returns {string} Sanitized string safe for storage and display
+ */
 const sanitizeInput = (val) => {
   if (typeof val !== 'string') return val;
   return val
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .replace(/\//g, "&#x2F;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
 };
 
-// Simple memory-based API Rate Limiter (Version 2.4)
+/**
+ * Memory-based API Rate Limiter.
+ * Limits each IP address to 180 requests per 60-second sliding window.
+ * Prevents denial-of-service and brute-force abuse.
+ */
 const ipRequestCounts = {};
 app.use((req, res, next) => {
-  const ip = req.ip;
+  const ip = req.ip || req.connection.remoteAddress;
   const now = Date.now();
   if (!ipRequestCounts[ip]) {
     ipRequestCounts[ip] = [];
   }
   ipRequestCounts[ip] = ipRequestCounts[ip].filter(t => now - t < 60000);
-  if (ipRequestCounts[ip].length >= 180) { // Limit to 180 requests per minute
-    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+  if (ipRequestCounts[ip].length >= 180) {
+    return res.status(429).json({
+      error: 'Too many requests. Please try again in a moment.',
+      retryAfter: 60
+    });
   }
   ipRequestCounts[ip].push(now);
   next();
 });
 
-app.use(express.json());
+// Parse JSON bodies with a 100kb size limit to prevent large payload attacks
+app.use(express.json({ limit: '100kb' }));
+
 app.use(express.static(path.join(__dirname, 'public')));
+
 
 // Whitelist of permitted JSON database files
 const ALLOWED_FILES = [
@@ -79,7 +145,12 @@ ALLOWED_FILES.forEach(fileName => {
   }
 });
 
-// Secure O(1) In-Memory JSON helpers (Path Traversal protected)
+/**
+ * Reads a JSON data file from the in-memory cache.
+ * Protected against path traversal by ALLOWED_FILES whitelist.
+ * @param {string} fileName - The filename to read (must be in ALLOWED_FILES)
+ * @returns {Object|null} Parsed JSON object or null if not found / not permitted
+ */
 const readJSON = (fileName) => {
   if (!ALLOWED_FILES.includes(fileName)) {
     console.error(`[Security Warning] Blocked unauthorized read of: ${fileName}`);
@@ -88,16 +159,23 @@ const readJSON = (fileName) => {
   return dbCache[fileName];
 };
 
+/**
+ * Writes a JSON data object to the in-memory cache and asynchronously persists to disk.
+ * Protected against path traversal by ALLOWED_FILES whitelist.
+ * @param {string} fileName - The target filename (must be in ALLOWED_FILES)
+ * @param {Object} data - The data object to serialize and store
+ * @returns {boolean} True if write succeeded, false if blocked
+ */
 const writeJSON = (fileName, data) => {
   if (!ALLOWED_FILES.includes(fileName)) {
     console.error(`[Security Warning] Blocked unauthorized write to: ${fileName}`);
     return false;
   }
-  
-  // Update cache instantly (O(1))
+
+  // Update in-memory cache instantly — O(1) read path
   dbCache[fileName] = data;
 
-  // Asynchronous disk backup to prevent event loop blocking
+  // Non-blocking async disk persistence — prevents event loop stalls
   const filePath = path.join(__dirname, 'data', fileName);
   fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8', (err) => {
     if (err) {
@@ -107,7 +185,11 @@ const writeJSON = (fileName, data) => {
   return true;
 };
 
-// WebSocket Event Bus Broadcast
+/**
+ * Broadcasts a JSON event to all connected WebSocket clients.
+ * Only delivers to clients with OPEN readyState to avoid stale connection errors.
+ * @param {Object} data - Event payload with a `type` discriminator and `data` body
+ */
 const broadcast = (data) => {
   const messageStr = JSON.stringify(data);
   wss.clients.forEach((client) => {
@@ -132,17 +214,27 @@ app.get('/api/sensors', (req, res) => {
   res.json(readJSON('gate_sensors.json'));
 });
 
+/** @route POST /api/sensors/update - Update gate congestion level and crowd count */
 app.post('/api/sensors/update', (req, res) => {
   const gate_id = sanitizeInput(req.body.gate_id);
   const congestion_level = sanitizeInput(req.body.congestion_level);
   const current_count = req.body.current_count;
   const avg_wait_min = req.body.avg_wait_min;
 
+  // Input validation
+  if (!gate_id) {
+    return res.status(400).json({ error: 'gate_id is required' });
+  }
+  const validLevels = ['low', 'medium', 'high', 'critical'];
+  if (congestion_level && !validLevels.includes(congestion_level)) {
+    return res.status(400).json({ error: `congestion_level must be one of: ${validLevels.join(', ')}` });
+  }
+
   const sensorData = readJSON('gate_sensors.json');
   if (!sensorData) return res.status(500).json({ error: 'Failed to read sensor data' });
 
   const gate = sensorData.gates.find(g => g.gate_id === gate_id);
-  if (!gate) return res.status(404).json({ error: 'Gate not found' });
+  if (!gate) return res.status(404).json({ error: `Gate '${gate_id}' not found` });
 
   if (congestion_level) gate.congestion_level = congestion_level;
   if (current_count !== undefined) gate.current_count = Number(current_count);
@@ -857,6 +949,26 @@ async function runFallbackMockAgent(persona, message, currentLocation, accessibi
 
   return `System active. Configured for ${persona}.`;
 }
+
+// ─── 404 Not Found Handler ──────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Endpoint not found',
+    path: req.originalUrl,
+    method: req.method
+  });
+});
+
+// ─── Global Error Handler ────────────────────────────────────────────────────
+// Catches any unhandled errors thrown in route handlers via next(err)
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('[Unhandled Server Error]', err);
+  const status = err.status || 500;
+  res.status(status).json({
+    error: status === 500 ? 'Internal server error' : err.message
+  });
+});
 
 // Start Server
 if (require.main === module) {

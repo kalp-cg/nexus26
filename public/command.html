@@ -10,7 +10,9 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header class="app-header">
+  <!-- Skip to main content for keyboard/screen reader accessibility -->
+  <a href="#command-main" class="skip-to-content">Skip to main content</a>
+  <header class="app-header" role="banner">
     <div class="app-logo">
       <a href="index.html" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem;">
         <span class="app-logo-badge" style="background: var(--accent-cyan); color: #0f172a;">COMMAND STAFF</span>
@@ -63,7 +65,7 @@
     </div>
   </div>
 
-  <main class="command-dashboard">
+  <main id="command-main" class="command-dashboard" role="main">
     <!-- LEFT PANEL: Stadium SVG Heatmap & Sensor Bench -->
     <section class="dashboard-panel">
       <div class="panel-header">

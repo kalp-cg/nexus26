@@ -17,6 +17,36 @@
   padding: 0;
 }
 
+/* ── Accessibility: Skip to content link (WCAG 2.1) ─────────────────────── */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  background: var(--accent-cyan);
+  color: #0f172a;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0 0 6px 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* ── Accessibility: Visible focus rings for keyboard navigation ──────────── */
+:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 3px;
+}
+
+/* Utility: Hidden elements */
+.hidden {
+  display: none !important;
+}
+
 body {
   background-color: var(--bg-dark);
   color: var(--text-primary);
@@ -1230,10 +1260,5 @@ body {
 .preset-btn:hover {
   background: var(--accent-cyan);
   color: #0f172a;
-}
-
-/* Global utility class to hide elements */
-.hidden {
-  display: none !important;
 }
 
