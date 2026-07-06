@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus26 — Venue Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-logo">
+      <a href="index.html" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem;">
+        <span class="app-logo-badge" style="background: var(--accent-cyan); color: #0f172a;">COMMAND STAFF</span>
+        <h2>NEXUS<span>26</span></h2>
+      </a>
+    </div>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <button class="btn-settings" onclick="toggleApiDrawer()" title="Configure Gemini API Key">
+        ⚙️ Key Config
+      </button>
+      <button class="ctrl-btn" onclick="resetSystemState()" style="padding: 0.45rem 1rem; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: var(--status-red); font-weight: 700;">
+        Reset Operations Data
+      </button>
+      <div class="conn-status">
+        <span class="status-dot" id="ws-status"></span>
+        <span id="ws-text">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Unified API Key Configuration Drawer -->
+  <div class="api-key-drawer hidden" id="api-key-drawer">
+    <span class="drawer-title">Gemini API Key Manager</span>
+    <div class="drawer-controls">
+      <input type="password" id="drawer-api-key" placeholder="Enter GEMINI_API_KEY here..." />
+      <button class="btn btn-primary" onclick="saveDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Save</button>
+      <button class="btn btn-secondary" onclick="clearDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Clear</button>
+    </div>
+  </div>
+
+  <!-- KPI Stats Ribbon -->
+  <div style="padding: 1.25rem 1.5rem 0 1.5rem;">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Crowd Congestion Index</span>
+        <span class="kpi-value stable" id="kpi-wait-avg">3.3m wait</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Active Incidents Queue</span>
+        <span class="kpi-value stable" id="kpi-incidents-count">0 Open</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">On-Ground Volunteer Force</span>
+        <span class="kpi-value stable" id="kpi-volunteers-count">4 Available</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Transit Spine Health</span>
+        <span class="kpi-value stable" id="kpi-transit-status">100% Stable</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="command-dashboard">
+    <!-- LEFT PANEL: Stadium SVG Heatmap & Sensor Bench -->
+    <section class="dashboard-panel">
+      <div class="panel-header">
+        <h3>Stadium Heatmap</h3>
+        <span class="key-status-label status-configured" style="font-size: 0.65rem;">LIVE SENSORS</span>
+      </div>
+      <div class="panel-body">
+        <!-- Visual Map Layer Selector & View Toggle -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+          <div class="layer-selector" style="display:flex; gap:0.25rem; background:rgba(255,255,255,0.04); padding:0.15rem; border-radius:4px; border:1px solid var(--border-light);">
+            <button class="ctrl-btn active-low" id="layer-btn-crowd" onclick="setMapLayer('crowd')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">Crowd</button>
+            <button class="ctrl-btn" id="layer-btn-waste" onclick="setMapLayer('waste')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">Waste</button>
+            <button class="ctrl-btn" id="layer-btn-security" onclick="setMapLayer('security')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">Security</button>
+          </div>
+          <div class="layer-selector" style="display:flex; gap:0.25rem; background:rgba(255,255,255,0.04); padding:0.15rem; border-radius:4px; border:1px solid var(--border-light);">
+            <button class="ctrl-btn active-low" id="btn-view-2d" onclick="toggleMapView('2d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">2D Blueprint</button>
+            <button class="ctrl-btn" id="btn-view-3d" onclick="toggleMapView('3d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">3D Model</button>
+          </div>
+        </div>
+
+        <!-- SVG 3D Isometric Heatmap -->
+        <div class="heatmap-card">
+          <div id="three-container" class="hidden" style="width:100%; height:100%;"></div>
+          <svg class="map-svg" viewBox="0 0 450 450" id="stadium-heatmap">
+            <!-- 3D Stadium Rings (Perspective Layers) -->
+            <ellipse cx="200" cy="180" rx="140" ry="70" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="6" />
+            <ellipse cx="200" cy="205" rx="110" ry="55" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="4" />
+            <ellipse cx="200" cy="230" rx="80" ry="40" fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="2" />
+            
+            <!-- Isometric Green Pitch -->
+            <polygon points="150,230 200,210 250,230 200,250" fill="rgba(16, 185, 129, 0.08)" stroke="rgba(16, 185, 129, 0.2)" stroke-width="1" />
+
+            <!-- Stadium Sectors -->
+            <text x="200" y="80" fill="rgba(255,255,255,0.15)" font-size="9" text-anchor="middle" font-weight="700" letter-spacing="1">NORTH CONCOURSE</text>
+            <text x="200" y="325" fill="rgba(255,255,255,0.15)" font-size="9" text-anchor="middle" font-weight="700" letter-spacing="1">SOUTH CONCOURSE</text>
+
+            <!-- Connections -->
+            <circle cx="200" cy="420" r="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.15)" />
+            <text x="200" y="423" font-size="9" font-weight="800" text-anchor="middle" fill="rgba(255,255,255,0.3)">T</text>
+            
+            <circle cx="380" cy="380" r="10" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.15)" />
+            <text x="380" y="383" font-size="9" font-weight="800" text-anchor="middle" fill="rgba(255,255,255,0.3)">R</text>
+
+            <!-- Heatmap 3D Floating Gates -->
+            <!-- Gate A1 -->
+            <g id="heatgate-A1">
+              <line x1="100" y1="160" x2="100" y2="120" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="2 2" />
+              <ellipse cx="100" cy="160" rx="6" ry="3" fill="#64748b" opacity="0.4" />
+              <circle cx="100" cy="120" r="13" fill="var(--status-green)" stroke="#fff" stroke-width="1.5" id="hcircle-gate-A1" />
+              <text x="100" y="123" font-size="8" font-weight="800" text-anchor="middle" fill="#000">A1</text>
+            </g>
+
+            <!-- Gate A2 -->
+            <g id="heatgate-A2">
+              <line x1="300" y1="100" x2="300" y2="60" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="2 2" />
+              <ellipse cx="300" cy="100" rx="6" ry="3" fill="#64748b" opacity="0.4" />
+              <circle cx="300" cy="60" r="13" fill="var(--status-green)" stroke="#fff" stroke-width="1.5" id="hcircle-gate-A2" />
+              <text x="300" y="63" font-size="8" font-weight="800" text-anchor="middle" fill="#000">A2</text>
+            </g>
+
+            <!-- Gate B1 -->
+            <g id="heatgate-B1">
+              <line x1="200" y1="300" x2="200" y2="260" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="2 2" />
+              <ellipse cx="200" cy="300" rx="6" ry="3" fill="#64748b" opacity="0.4" />
+              <circle cx="200" cy="260" r="13" fill="var(--status-green)" stroke="#fff" stroke-width="1.5" id="hcircle-gate-B1" />
+              <text x="200" y="263" font-size="8" font-weight="800" text-anchor="middle" fill="#000">B1</text>
+            </g>
+
+            <!-- Sections mapping -->
+            <g class="section-label" id="sec-101"><circle cx="130" cy="140" r="3" fill="#fff" opacity="0.2"/><text x="130" y="152" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle">S101</text></g>
+            <g class="section-label" id="sec-102"><circle cx="180" cy="130" r="3" fill="#fff" opacity="0.2"/><text x="180" y="122" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle">S102</text></g>
+            <g class="section-label" id="sec-103"><circle cx="230" cy="130" r="3" fill="#fff" opacity="0.2"/><text x="230" y="122" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle">S103</text></g>
+            <g class="section-label" id="sec-104"><circle cx="280" cy="140" r="3" fill="#fff" opacity="0.2"/><text x="280" y="152" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle">S104</text></g>
+            <g class="section-label" id="sec-110"><circle cx="310" cy="190" r="3" fill="#fff" opacity="0.2"/><text x="328" y="193" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle">S110</text></g>
+            <g class="section-label" id="sec-115"><circle cx="260" cy="240" r="3" fill="#fff" opacity="0.2"/><text x="260" y="252" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle">S115</text></g>
+            <g class="section-label" id="sec-118"><circle cx="200" cy="250" r="3" fill="#fff" opacity="0.2"/><text x="200" y="242" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle">S118</text></g>
+            <g class="section-label" id="sec-120"><circle cx="140" cy="230" r="3" fill="#fff" opacity="0.2"/><text x="140" y="242" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle">S120</text></g>
+            <g class="section-label" id="sec-125"><circle cx="110" cy="190" r="3" fill="#fff" opacity="0.2"/><text x="92" y="193" font-size="8" fill="rgba(255,255,255,0.3)" text-anchor="middle">S125</text></g>
+          </svg>
+        </div>
+
+        <!-- Sensor Simulator controls -->
+        <div class="interactive-gate-group">
+          <h4>Sensor Simulator Test Bench</h4>
+          
+          <!-- Gate A1 Controls -->
+          <div class="gate-sensor-row" id="bench-gate-A1">
+            <div class="gate-info-col">
+              <h4>Gate A1</h4>
+              <p>Count: <span id="lbl-count-A1">1200</span>/hr | Wait: <span id="lbl-wait-A1">3</span>m</p>
+            </div>
+            <div class="gate-controls">
+              <button class="ctrl-btn active-low" onclick="simulateSensor('A1', 'low', 1200, 3)">Low</button>
+              <button class="ctrl-btn" onclick="simulateSensor('A1', 'high', 2800, 14)">High</button>
+              <button class="ctrl-btn" onclick="simulateSensor('A1', 'critical', 3820, 22)">Spike</button>
+            </div>
+          </div>
+
+          <!-- Gate A2 Controls -->
+          <div class="gate-sensor-row" id="bench-gate-A2">
+            <div class="gate-info-col">
+              <h4>Gate A2</h4>
+              <p>Count: <span id="lbl-count-A2">1100</span>/hr | Wait: <span id="lbl-wait-A2">3</span>m</p>
+            </div>
+            <div class="gate-controls">
+              <button class="ctrl-btn active-low" onclick="simulateSensor('A2', 'low', 1100, 3)">Low</button>
+              <button class="ctrl-btn" onclick="simulateSensor('A2', 'high', 2600, 11)">High</button>
+              <button class="ctrl-btn" onclick="simulateSensor('A2', 'critical', 3700, 18)">Spike</button>
+            </div>
+          </div>
+
+          <!-- Gate B1 Controls -->
+          <div class="gate-sensor-row" id="bench-gate-B1">
+            <div class="gate-info-col">
+              <h4>Gate B1</h4>
+              <p>Count: <span id="lbl-count-B1">1500</span>/hr | Wait: <span id="lbl-wait-B1">4</span>m</p>
+            </div>
+            <div class="gate-controls">
+              <button class="ctrl-btn active-low" onclick="simulateSensor('B1', 'low', 1500, 4)">Low</button>
+              <button class="ctrl-btn" onclick="simulateSensor('B1', 'high', 2900, 14)">High</button>
+              <button class="ctrl-btn" onclick="simulateSensor('B1', 'critical', 3900, 25)">Spike</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scenario Presets Panel -->
+        <div class="preset-simulator" style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border-light);">
+          <h4 style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">Quick Scenario Presets</h4>
+          <div class="preset-grid">
+            <button class="preset-btn" onclick="triggerScenario('surge')">1. Gate Surge</button>
+            <button class="preset-btn" onclick="triggerScenario('waste')">2. Trash Hazard</button>
+            <button class="preset-btn" onclick="triggerScenario('transit')">3. Metro Delay</button>
+          </div>
+        </div>
+
+        <!-- Emergency Broadcast System Panel -->
+        <div class="broadcast-panel" style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border-light);">
+          <h4 style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">Emergency Broadcast Control</h4>
+          <div style="display:flex; gap:0.5rem;">
+            <input type="text" id="broadcast-msg-input" placeholder="Type critical warning for all fans..." style="flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem 0.75rem; font-size:0.8rem; outline:none;" />
+            <button class="btn btn-primary" onclick="sendEmergencyBroadcast()" style="padding:0.4rem 1rem; font-size:0.8rem; border-radius:6px; font-weight:700; background:var(--status-red); color:#fff;">
+              Broadcast Alert
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CENTER PANEL: Natural Language Operations Agent Console -->
+    <section class="dashboard-panel command-console-wrapper">
+      <div class="console-chat-box">
+        <div class="panel-header" style="border:none; padding:0 0 1rem 0;">
+          <div>
+            <h3>Operations Command Console</h3>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">Query the operational manuals, gate levels, and dispatch teams using natural language.</p>
+          </div>
+          <span class="key-status-label status-configured" id="agent-mode">GEMINI ACTIVE</span>
+        </div>
+        
+        <div class="console-messages" id="console-messages">
+          <div class="console-bubble assistant">
+            <pre>COMMAND INTEL ACTIVE. Ask me anything about current operations, or command a dispatch:
+- "Which gates are congested?"
+- "Do we have any open volunteer reports?"
+- "Dispatch volunteer Maria to VR-1042"</pre>
+          </div>
+        </div>
+
+        <div class="console-input-row">
+          <input type="text" id="console-input" placeholder="Enter operational command or query (e.g. 'Show congested gates')..." onkeydown="handleConsoleKey(event)" />
+          <button class="btn btn-primary" onclick="sendConsoleCommand()" style="border-radius:6px; font-weight:700;">Query</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Live Alerts & Volunteer Submissions -->
+    <section class="dashboard-panel">
+      <div class="panel-header">
+        <h3>Live Dispatch Queue</h3>
+        <span class="key-status-label status-idle" id="active-alert-count">1 Alert</span>
+      </div>
+      <div class="panel-body" style="gap: 1rem;">
+        <!-- Alerts Log Feed -->
+        <div class="alerts-list" id="alerts-list">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Volunteer Incident submission form (For testing data layer insertion) -->
+        <div class="volunteer-form-card" style="margin-top:auto; padding-top:1rem; border-top:1px solid var(--border-light);">
+          <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:0.75rem; text-transform:uppercase; letter-spacing:1px; color:#b5c3d8;">Submit On-Ground Report</h4>
+          <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            <select id="report-zone" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem; font-size:0.8rem; outline:none;">
+              <option value="North Concourse">North Concourse</option>
+              <option value="South Concourse">South Concourse</option>
+              <option value="Gate A1 Entrance">Gate A1 Entrance</option>
+              <option value="Gate A2 Entrance">Gate A2 Entrance</option>
+              <option value="Gate B1 Entrance">Gate B1 Entrance</option>
+            </select>
+            <select id="report-type" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem; font-size:0.8rem; outline:none;">
+              <option value="overflowing_bin">Overflowing Garbage Bin</option>
+              <option value="crowd_surge">Crowd Congestion Surge</option>
+              <option value="accessibility_blocked">Ramp Blocked / Access Issue</option>
+              <option value="medical">Medical Alert / First Aid Needed</option>
+              <option value="other">General Inquiry / Other</option>
+            </select>
+            <input type="text" id="report-text" placeholder="Explain the issue details..." style="background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem 0.75rem; font-size:0.8rem; outline:none;" />
+            <button class="btn btn-secondary" onclick="submitVolunteerReport()" style="padding:0.4rem; font-size:0.8rem;">File Report</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Three.js CDN Inclusions (Version 2.2) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="js/stadium3d.js"></script>
+  <script src="js/command.js"></script>
+</body>
+</html>

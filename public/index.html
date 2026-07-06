@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus26 — FIFA World Cup 2026 AI Operations Brain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="portal-body">
+  <div class="portal-stars"></div>
+
+  <header class="portal-header">
+    <div class="logo-container">
+      <span class="logo-badge">FIFA WORLD CUP 2026</span>
+      <h1 class="logo-title">NEXUS<span>26</span></h1>
+      <p class="logo-tagline">AI Stadium Operations & Fan Navigation Brain</p>
+    </div>
+  </header>
+
+  <main class="portal-container">
+    <div class="api-key-banner">
+      <div class="banner-content">
+        <span class="card-icon-styled">API Control</span>
+        <h4>Gemini API Key Configuration</h4>
+        <p>Enter your Gemini API key below to enable real-time function calling and translation. If left blank, the system automatically uses its rule-based fallback Mock-Agent to ensure a fully interactive demo.</p>
+        <div class="api-input-group">
+          <input type="password" id="global-api-key" placeholder="Enter GEMINI_API_KEY here..." />
+          <button onclick="saveApiKey()" id="save-key-btn">Save Key</button>
+          <span id="key-status" class="key-status-label status-idle">Not configured (Fallback Mode Active)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="surface-grid">
+      <!-- Fan Companion Card -->
+      <div class="surface-card fan-card">
+        <div class="card-content">
+          <span class="card-icon-styled">Fan Portal</span>
+          <h2>Global Fan Companion</h2>
+          <p class="card-desc">Bilingual, mobile-first wayfinding assistant helping fans locate seats, check accessibility ramps, get live transit status, and speak to an interactive navigation guide.</p>
+          <ul class="feature-bullets">
+            <li><span class="bullet-dot">•</span> Real-time dynamic pathfinding</li>
+            <li><span class="bullet-dot">•</span> Bilingual Voice assistant (Web Speech API)</li>
+            <li><span class="bullet-dot">•</span> Accessibility-first ramp routing</li>
+            <li><span class="bullet-dot">•</span> Real-time transit delay advisor</li>
+          </ul>
+          <div class="btn-group">
+            <a href="fan.html" class="btn btn-primary btn-glow">Launch Mobile View</a>
+            <a href="fan.html" target="_blank" class="btn btn-secondary">Open New Tab</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Command Center Card -->
+      <div class="surface-card command-card">
+        <div class="card-content">
+          <span class="card-icon-styled">Staff Console</span>
+          <h2>Venue Command Center</h2>
+          <p class="card-desc">Staff operations dashboard showing real-time stadium congestion, live sensor streams, volunteer reports, dispatcher assignment queues, and a natural language command agent.</p>
+          <ul class="feature-bullets">
+            <li><span class="bullet-dot">•</span> Interactive SVG congestion heatmap</li>
+            <li><span class="bullet-dot">•</span> Live volunteer incident reports log</li>
+            <li><span class="bullet-dot">•</span> Interactive sensor test bench</li>
+            <li><span class="bullet-dot">•</span> NL Operations Command Console</li>
+          </ul>
+          <div class="btn-group">
+            <a href="command.html" class="btn btn-cyan btn-glow">Launch Dashboard</a>
+            <a href="command.html" target="_blank" class="btn btn-secondary">Open New Tab</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="portal-footer">
+    <p>Nexus26 Operations Brain | Developed with Gemini API + Antigravity Orchestration</p>
+  </footer>
+
+  <script>
+    // Load existing API Key
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedKey = localStorage.getItem('gemini_api_key');
+      const statusLabel = document.getElementById('key-status');
+      if (savedKey) {
+        document.getElementById('global-api-key').value = savedKey;
+        statusLabel.textContent = 'Configured (Active Gemini API Mode)';
+        statusLabel.className = 'key-status-label status-configured';
+      }
+    });
+
+    function saveApiKey() {
+      const key = document.getElementById('global-api-key').value.trim();
+      const statusLabel = document.getElementById('key-status');
+      if (key) {
+        localStorage.setItem('gemini_api_key', key);
+        statusLabel.textContent = 'Configured (Active Gemini API Mode)';
+        statusLabel.className = 'key-status-label status-configured';
+        alert('API key saved locally to browser storage!');
+      } else {
+        localStorage.removeItem('gemini_api_key');
+        statusLabel.textContent = 'Not configured (Fallback Mode Active)';
+        statusLabel.className = 'key-status-label status-idle';
+        alert('API key cleared. System is running in Fallback Mock-Agent Mode.');
+      }
+    }
+  </script>
+</body>
+</html>

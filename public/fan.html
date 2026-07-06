@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus26 — Global Fan Surface</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-logo">
+      <a href="index.html" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem;">
+        <span class="app-logo-badge">FAN</span>
+        <h2>NEXUS<span>26</span></h2>
+      </a>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <button class="btn-settings" onclick="toggleApiDrawer()" title="Configure Gemini API Key">
+        ⚙️ Key Config
+      </button>
+      <div class="conn-status">
+        <span class="status-dot" id="ws-status"></span>
+        <span id="ws-text">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Unified API Key Configuration Drawer -->
+  <div class="api-key-drawer hidden" id="api-key-drawer">
+    <span class="drawer-title">Gemini API Key Manager</span>
+    <div class="drawer-controls">
+      <input type="password" id="drawer-api-key" placeholder="Enter GEMINI_API_KEY here..." />
+      <button class="btn btn-primary" onclick="saveDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Save</button>
+      <button class="btn btn-secondary" onclick="clearDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Clear</button>
+    </div>
+  </div>
+
+  <main class="fan-viewport-wrapper">
+    <div class="mobile-frame">
+      <div class="mobile-content">
+        <!-- Controls Header: Lang & Accessibility -->
+        <div class="fan-actions-row">
+          <div class="lang-selector">
+            <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
+            <button class="lang-btn" onclick="setLanguage('es')">ES</button>
+            <button class="lang-btn" onclick="setLanguage('fr')">FR</button>
+            <button class="lang-btn" onclick="setLanguage('de')">DE</button>
+          </div>
+          <button class="accessibility-toggle" id="access-toggle" onclick="toggleAccessibility()" title="Toggle Wheelchair / Stroller Accessible Rerouting">
+            Route: Standard
+          </button>
+        </div>
+
+        <!-- Live System Alert Banner -->
+        <div class="system-alert-banner hidden" id="system-alert-banner">
+          <div class="alert-banner-header">
+            <span id="alert-banner-title">CRITICAL ALERT</span>
+            <button onclick="dismissAlertBanner()" class="alert-close-btn">&times;</button>
+          </div>
+          <div class="alert-banner-body" id="alert-banner-msg">
+            Warning details...
+          </div>
+        </div>
+
+        <!-- Smart Wallet Ticket Card -->
+        <div class="ticket-card" id="ticket-card">
+          <div class="ticket-header" onclick="toggleTicketDetails()">
+            <span>Digital Match Ticket</span>
+            <span id="ticket-toggle-text">[Show]</span>
+          </div>
+          <div class="ticket-details hidden" id="ticket-details-box">
+            <div class="ticket-meta">
+              <div>FIFA Match 24: USA vs. Mexico</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Kickoff 20:00 | SoFi Stadium Entrance</div>
+            </div>
+            <div class="ticket-barcode-box">
+              <div class="barcode-visual">||| | ||| || | ||| || ||</div>
+              <div class="barcode-text">FIFA-2026-USA-MEX-S102</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:0.6rem; font-size:0.8rem; font-weight:700;">
+              <span>Gate: A1</span>
+              <span>Section: 102</span>
+              <span>Seat: 12</span>
+            </div>
+            <button class="btn btn-primary" onclick="scanTicket()" style="width:100%; margin-top:0.75rem; padding:0.45rem; font-size:0.8rem; border-radius:4px;">
+              Scan & Route to Seat Section
+            </button>
+          </div>
+        </div>
+
+        <!-- Map View Toggle -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+          <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Navigation View</span>
+          <div class="layer-selector" style="display:flex; gap:0.25rem; background:rgba(255,255,255,0.04); padding:0.15rem; border-radius:4px; border:1px solid var(--border-light);">
+            <button class="ctrl-btn active-low" id="btn-view-2d" onclick="toggleMapView('2d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">2D Blueprint</button>
+            <button class="ctrl-btn" id="btn-view-3d" onclick="toggleMapView('3d')" style="padding:0.2rem 0.5rem; font-size:0.65rem;">3D Model</button>
+          </div>
+        </div>
+
+        <!-- Dynamic 3D Isometric Stadium Map -->
+        <div class="map-box">
+          <div id="three-container" class="hidden" style="width:100%; height:100%;"></div>
+          <svg class="map-svg" viewBox="0 0 450 450" id="stadium-map">
+            <!-- 3D Stadium Rings (Perspective Layers) -->
+            <ellipse cx="200" cy="180" rx="140" ry="70" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="6" />
+            <ellipse cx="200" cy="205" rx="110" ry="55" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="4" />
+            <ellipse cx="200" cy="230" rx="80" ry="40" fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="2" />
+            
+            <!-- Isometric Green Pitch -->
+            <polygon points="150,230 200,210 250,230 200,250" fill="rgba(16, 185, 129, 0.08)" stroke="rgba(16, 185, 129, 0.2)" stroke-width="1" />
+            
+            <!-- Stadium Zones -->
+            <text x="200" y="80" fill="rgba(255,255,255,0.15)" font-size="9" text-anchor="middle" font-weight="700" letter-spacing="1">NORTH CONCOURSE</text>
+            <text x="200" y="325" fill="rgba(255,255,255,0.15)" font-size="9" text-anchor="middle" font-weight="700" letter-spacing="1">SOUTH CONCOURSE</text>
+            
+            <!-- Connection Points (Transit & Rideshare) -->
+            <g id="transit-node" class="map-node">
+              <circle cx="200" cy="420" r="14" fill="rgba(6, 182, 212, 0.1)" stroke="var(--accent-cyan)" stroke-width="1.5" />
+              <text x="200" y="424" font-size="11" font-weight="800" text-anchor="middle" fill="#fff" pointer-events="none">T</text>
+              <text x="200" y="442" font-size="8" text-anchor="middle" fill="#8c9bb5">Transit Station</text>
+            </g>
+
+            <g id="rideshare-node" class="map-node">
+              <circle cx="380" cy="380" r="14" fill="rgba(6, 182, 212, 0.1)" stroke="var(--accent-cyan)" stroke-width="1.5" />
+              <text x="380" y="384" font-size="11" font-weight="800" text-anchor="middle" fill="#fff" pointer-events="none">R</text>
+              <text x="380" y="402" font-size="8" text-anchor="middle" fill="#8c9bb5">Rideshare Hub</text>
+            </g>
+
+            <!-- Dynamic Paths -->
+            <path id="fan-path" d="" fill="none" stroke="var(--accent-cyan)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="animated-path" />
+            
+            <!-- 3D Floating Gate Pins -->
+            <!-- Gate A1 -->
+            <g id="gate-A1" class="map-node">
+              <line x1="100" y1="160" x2="100" y2="120" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="2 2" />
+              <ellipse cx="100" cy="160" rx="6" ry="3" fill="#64748b" opacity="0.4" />
+              <circle cx="100" cy="120" r="11" fill="var(--status-green)" stroke="#fff" stroke-width="1" id="circle-gate-A1" />
+              <text x="100" y="123" font-size="8" font-weight="800" text-anchor="middle" fill="#000">A1</text>
+              <text x="100" y="102" font-size="8" font-weight="700" text-anchor="middle" fill="var(--text-muted)">Gate A1</text>
+            </g>
+
+            <!-- Gate A2 -->
+            <g id="gate-A2" class="map-node">
+              <line x1="300" y1="100" x2="300" y2="60" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="2 2" />
+              <ellipse cx="300" cy="100" rx="6" ry="3" fill="#64748b" opacity="0.4" />
+              <circle cx="300" cy="60" r="11" fill="var(--status-green)" stroke="#fff" stroke-width="1" id="circle-gate-A2" />
+              <text x="300" y="63" font-size="8" font-weight="800" text-anchor="middle" fill="#000">A2</text>
+              <text x="300" y="42" font-size="8" font-weight="700" text-anchor="middle" fill="var(--text-muted)">Gate A2</text>
+            </g>
+
+            <!-- Gate B1 -->
+            <g id="gate-B1" class="map-node">
+              <line x1="200" y1="300" x2="200" y2="260" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="2 2" />
+              <ellipse cx="200" cy="300" rx="6" ry="3" fill="#64748b" opacity="0.4" />
+              <circle cx="200" cy="260" r="11" fill="var(--status-green)" stroke="#fff" stroke-width="1" id="circle-gate-B1" />
+              <text x="200" y="263" font-size="8" font-weight="800" text-anchor="middle" fill="#000">B1</text>
+              <text x="200" y="242" font-size="8" font-weight="700" text-anchor="middle" fill="var(--text-muted)">Gate B1</text>
+            </g>
+
+            <!-- Key Seat Sections -->
+            <g class="section-label" id="sec-101"><circle cx="130" cy="140" r="3" fill="#fff" opacity="0.4"/><text x="130" y="152" font-size="9" fill="#8c9bb5" text-anchor="middle">S101</text></g>
+            <g class="section-label" id="sec-102"><circle cx="180" cy="130" r="3" fill="#fff" opacity="0.4"/><text x="180" y="122" font-size="9" fill="#8c9bb5" text-anchor="middle">S102</text></g>
+            <g class="section-label" id="sec-103"><circle cx="230" cy="130" r="3" fill="#fff" opacity="0.4"/><text x="230" y="122" font-size="9" fill="#8c9bb5" text-anchor="middle">S103</text></g>
+            <g class="section-label" id="sec-104"><circle cx="280" cy="140" r="3" fill="#fff" opacity="0.4"/><text x="280" y="152" font-size="9" fill="#8c9bb5" text-anchor="middle">S104</text></g>
+            <g class="section-label" id="sec-110"><circle cx="310" cy="190" r="3" fill="#fff" opacity="0.4"/><text x="328" y="193" font-size="9" fill="#8c9bb5" text-anchor="middle">S110</text></g>
+            <g class="section-label" id="sec-115"><circle cx="260" cy="240" r="3" fill="#fff" opacity="0.4"/><text x="260" y="252" font-size="9" fill="#8c9bb5" text-anchor="middle">S115</text></g>
+            <g class="section-label" id="sec-118"><circle cx="200" cy="250" r="3" fill="#fff" opacity="0.4"/><text x="200" y="242" font-size="9" fill="#8c9bb5" text-anchor="middle">S118</text></g>
+            <g class="section-label" id="sec-120"><circle cx="140" cy="230" r="3" fill="#fff" opacity="0.4"/><text x="140" y="242" font-size="9" fill="#8c9bb5" text-anchor="middle">S120</text></g>
+            <g class="section-label" id="sec-125"><circle cx="110" cy="190" r="3" fill="#fff" opacity="0.4"/><text x="92" y="193" font-size="9" fill="#8c9bb5" text-anchor="middle">S125</text></g>
+
+            <!-- User Pin (Placed at transit base) -->
+            <g id="user-pin" transform="translate(200, 420)">
+              <circle cx="0" cy="0" r="6" fill="#ef4444" stroke="#fff" stroke-width="1.5" />
+              <circle cx="0" cy="0" r="12" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.5">
+                <animate attributeName="r" values="6;16;6" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite" />
+              </circle>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Reroute / Directions Details Panel -->
+        <div class="route-card hidden" id="route-panel">
+          <div class="route-header">
+            <h5 id="route-heading">Route Status</h5>
+            <span class="route-badge direct" id="route-badge">Direct Route</span>
+          </div>
+          <div class="route-info">
+            Est: <span id="route-time">--</span> mins | Distance: <span id="route-distance">--</span> m
+          </div>
+          <div class="route-desc" id="route-instructions">
+            Choose a section or ask by voice to draw routes.
+          </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+          <div class="chat-messages" id="chat-messages">
+            <div class="chat-bubble assistant">
+              Hello! I am Nexus26, your AI assistant. You can speak to me or type your request (e.g. "I want to go to Section 102").
+            </div>
+          </div>
+          
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Type message..." onkeydown="handleInputKey(event)" />
+            <button class="send-btn" onclick="sendTextMessage()" title="Send Text">
+              SEND
+            </button>
+          </div>
+        </div>
+
+        <!-- Mic Button for Speech simulation -->
+        <div class="mic-btn-container">
+          <button class="mic-btn" id="voice-btn" onclick="startVoiceAssistant()" title="Tap to Speak">
+            TAP TO SPEAK
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Three.js CDN Inclusions (Version 2.2) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="js/stadium3d.js"></script>
+  <script src="js/fan.js"></script>
+</body>
+</html>

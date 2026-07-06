@@ -1,0 +1,17 @@
+{
+  "A1": {
+    "wheelchair_ramp_available": false,
+    "nearest_ramp_coords": [33.9528, -118.3411],
+    "rideshare_zone_coords": [33.9540, -118.3405]
+  },
+  "A2": {
+    "wheelchair_ramp_available": true,
+    "nearest_ramp_coords": [33.9535, -118.3392],
+    "rideshare_zone_coords": [33.9540, -118.3405]
+  },
+  "B1": {
+    "wheelchair_ramp_available": true,
+    "nearest_ramp_coords": [33.9515, -118.3402],
+    "rideshare_zone_coords": [33.9510, -118.3420]
+  }
+}
