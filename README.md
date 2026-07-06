@@ -55,11 +55,13 @@ nexus26/
 │   ├── command.html                 # Staff Command Dashboard
 │   ├── fan.html                     # Mobile Fan Companion View
 │   └── index.html                   # Submission Gateway Portal
-├── .env.example                     # Environment variables template
+├── .editorconfig                # Cross-editor formatting consistency
 ├── .eslintrc.json                   # ESLint code quality configuration
+├── .prettierrc                      # Prettier formatting configuration
+├── jest.config.js                   # Jest test configuration with coverage thresholds
 ├── package.json                     # Dependency manifests & startup scripts
 ├── server.js                        # Node/Express backend & WebSocket Spine
-├── server.test.js                   # Jest unit test suite (17 assertions)
+├── server.test.js                   # Jest unit test suite (36 assertions)
 └── test_queries.js                  # Automated CLI integration test suite
 ```
 </details>
@@ -158,10 +160,15 @@ Arrange two browser windows side-by-side:
 
 ## Automated Testing
 
-### Jest Unit Test Suite (17 assertions)
+### Jest Unit Test Suite (36 assertions)
 Run the full test suite with:
 ```bash
 npm test
+```
+
+Run with coverage enforcement:
+```bash
+npm run test:coverage
 ```
 The suite validates:
 - All REST API endpoints (GET/POST) with correct status codes
@@ -183,7 +190,9 @@ node test_queries.js
 
 | Standard | Implementation |
 |---|---|
-| **Linting** | ESLint configured (`.eslintrc.json`) with `eslint:recommended` |
+| **Linting** | ESLint configured (`.eslintrc.json`) with `eslint:recommended`. Run: `npm run lint` |
+| **Formatting** | Prettier (`.prettierrc`) + EditorConfig (`.editorconfig`) for cross-editor consistency |
+| **Coverage Gates** | Jest coverage thresholds enforced in `jest.config.js` (70% stmts, 60% branches) |
 | **JSDoc** | All functions, routes, and modules annotated with `@param`/`@returns` |
 | **Strict Mode** | `'use strict'` enforced across all JS files |
 | **Structured Logging** | Timestamped `[ISO] [LEVEL] [MODULE]` format via `log()` utility |

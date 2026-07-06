@@ -3,7 +3,7 @@
  * @description Real-time WebSocket event bus connecting the Fan Companion and
  *   Command Center dashboards. Handles REST API data operations, Gemini AI
  *   function-calling integration, input sanitization, and security enforcement.
- * @version 2.5.0
+ * @version 1.0.0
  * @author Nexus26 Team
  */
 
@@ -43,12 +43,14 @@ const log = (level, module, message) => {
  */
 const validateEnvironment = () => {
   const port = process.env.PORT || 3000;
+  const nodeEnv = process.env.NODE_ENV || 'development';
   if (!process.env.GEMINI_API_KEY) {
     log('WARN', 'ENV', 'GEMINI_API_KEY not set — running in Fallback Mock-Agent mode');
   } else {
     log('INFO', 'ENV', 'GEMINI_API_KEY detected — Gemini function-calling enabled');
   }
   log('INFO', 'ENV', `PORT resolved to ${port}`);
+  log('INFO', 'ENV', `NODE_ENV: ${nodeEnv}`);
 };
 validateEnvironment();
 
@@ -239,11 +241,11 @@ const broadcast = (data) => {
 
 // WebSocket connection handler
 wss.on('connection', (ws) => {
-  console.log('[WS] Client connected');
+  log('INFO', 'WS', 'Client connected');
   ws.send(JSON.stringify({ type: 'WELCOME', message: 'Connected to Nexus26 Live Spine' }));
 
   ws.on('close', () => {
-    console.log('[WS] Client disconnected');
+    log('INFO', 'WS', 'Client disconnected');
   });
 });
 
@@ -1062,11 +1064,11 @@ async function runFallbackMockAgent(persona, message, currentLocation, accessibi
     const idMatch = msgLower.match(/(vr-\d+)/i);
     if (hasDispatchWord && idMatch) {
       const repId = idMatch[1].toUpperCase();
-      const res = await local_dispatch_volunteer(repId, 'General Zone');
-      if (res.error) {
+      const dispatchResult = await local_dispatch_volunteer(repId, 'General Zone');
+      if (dispatchResult.error) {
         return `ERROR → Dispatch failed → Action: Report ID ${repId} not found in database.`;
       }
-      return `DISPATCHED → Report ${repId} assigned to ${res.assigned_volunteer} → Action: Volunteer en route; tracking status.`;
+      return `DISPATCHED → Report ${repId} assigned to ${dispatchResult.assigned_volunteer} → Action: Volunteer en route; tracking status.`;
     }
 
     return 'COMMAND CORE → Nexus26 Active. Provide query:\n- Ask: "Which gates are backing up?"\n- Ask: "Which zones have overflowing bins?"\n- Command: "Dispatch volunteer to VR-1042"';

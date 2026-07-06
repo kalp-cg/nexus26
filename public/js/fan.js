@@ -3,7 +3,7 @@
  * @description Manages WebSocket connectivity, chat UI, SVG/3D map toggling,
  *   voice recognition (Web Speech API), bilingual translation, accessibility
  *   routing, and real-time sensor update rendering for the mobile fan surface.
- * @version 2.5.0
+ * @version 1.0.0
  */
 
 /* eslint-disable no-unused-vars */

@@ -3,7 +3,7 @@
  * @description Manages the staff operations dashboard including WebSocket event
  *   consumption, KPI stat counters, scenario simulation presets, live alert feeds,
  *   volunteer dispatch workflows, and the natural-language operations console.
- * @version 2.5.0
+ * @version 1.0.0
  */
 
 /* eslint-disable no-unused-vars */

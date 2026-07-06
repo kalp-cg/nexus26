@@ -1,6 +1,8 @@
 /**
- * Nexus26 - Procedural 3D WebGL Stadium Map Renderer
- * Built using Three.js and OrbitControls
+ * @fileoverview Nexus26 - Procedural 3D WebGL Stadium Map Renderer
+ * @description Generates a fully interactive 3D stadium bowl with gate status
+ *   spheres, fan walking path tubes, and orbit camera controls using Three.js.
+ * @version 1.0.0
  */
 
 /* eslint-disable no-unused-vars */

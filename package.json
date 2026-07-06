@@ -1,12 +1,31 @@
 {
   "name": "nexus26",
   "version": "1.0.0",
-  "description": "FIFA World Cup 2026 AI Operations Brain",
+  "description": "FIFA World Cup 2026 AI Operations Brain — Real-time fan navigation and venue command center powered by Gemini AI",
   "main": "server.js",
+  "license": "MIT",
+  "author": "Kalp Patel",
+  "keywords": [
+    "fifa",
+    "world-cup-2026",
+    "gemini-ai",
+    "websocket",
+    "real-time",
+    "threejs",
+    "stadium-operations",
+    "accessibility",
+    "multilingual"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kalp-cg/nexus26.git"
+  },
   "scripts": {
     "start": "node server.js",
     "test": "jest --runInBand --detectOpenHandles --forceExit",
-    "lint": "eslint ."
+    "test:coverage": "jest --coverage --runInBand --detectOpenHandles --forceExit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
