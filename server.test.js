@@ -9,6 +9,19 @@
 'use strict';
 
 const request = require('supertest');
+
+// Mock fs.writeFile to prevent tests from modifying physical files
+jest.mock('fs', () => {
+  const originalFs = jest.requireActual('fs');
+  return {
+    ...originalFs,
+    writeFile: jest.fn().mockImplementation((path, data, options, callback) => {
+      const cb = typeof options === 'function' ? options : callback;
+      if (cb) cb(null);
+    })
+  };
+});
+
 const { app, server } = require('./server');
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
