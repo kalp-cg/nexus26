@@ -1,14 +1,14 @@
-# 🧠 Nexus26 — FIFA World Cup 2026 AI Operations Brain
+# Nexus26 — FIFA World Cup 2026 AI Operations Brain
 ### Hac2Skill Vibe Coding Submission | Built with Gemini API, WebSockets & Three.js
 
 ---
 
-## ⚡ One-Line Pitch
+## One-Line Pitch
 **Nexus26 is a bilingual pair of GenAI surfaces — a fan-facing multilingual navigation companion and a command-center intelligence dashboard — both powered by the same Gemini function-calling backbone, so a single live signal (a gate sensor spike, a delayed subway train) simultaneously reroutes fans and alerts staff in real time.**
 
 ---
 
-## 🛠️ System Architecture
+## System Architecture
 
 ```mermaid
 sequenceDiagram
@@ -31,10 +31,10 @@ sequenceDiagram
 
 ---
 
-## 📦 Directory Hierarchy
+## Repository Hierarchy
 
 <details>
-<summary>📂 Click to expand project folder structure</summary>
+<summary>Click to expand project folder structure</summary>
 
 ```
 nexus26/
@@ -64,11 +64,11 @@ nexus26/
 
 ---
 
-## 🌟 Premium Features
+## System Features
 
 | Feature | Surface | Description | Technical Stack |
 | :--- | :--- | :--- | :--- |
-| **Interactive 3D WebGL Map** | Fan & Command | procedurally rendered 3D stadium bowl with OrbitControls (drag to rotate, scroll to zoom, right-click to pan). Paths draw as glowing 3D tubes. | `Three.js` / WebGL / HTML Canvas |
+| **Interactive 3D WebGL Map** | Fan & Command | Procedurally rendered 3D stadium bowl with OrbitControls (drag to rotate, scroll to zoom, right-click to pan). Paths draw as glowing 3D tubes. | Three.js / WebGL / HTML Canvas |
 | **Real-time Congestion Rerouting** | Fan Mobile | Triggering a gate congestion spike instantly alerts active fans with warning banners and redraws path lines. | WebSockets / SVG / Canvas |
 | **Digital Ticket Integration** | Fan Mobile | Collapsible match ticket card. Click "Scan & Route" to automatically plot paths from transit hubs into stand sections. | HTML / Javascript |
 | **Voice Translation Guide** | Fan Mobile | Speech recognition and translation guides. Speaks back wayfinding directions in Spanish, French, German, or English. | Web Speech Web API |
@@ -77,10 +77,10 @@ nexus26/
 
 ---
 
-## 🚀 Installation & Local Startup
+## Installation & Local Startup
 
 <details>
-<summary>💻 Click to expand local setup instructions</summary>
+<summary>Click to expand local setup instructions</summary>
 
 ### Prerequisites
 - Node.js (version 18 or above)
@@ -122,10 +122,10 @@ Open [http://localhost:3000](http://localhost:3000) to view the portal entry gat
 
 ---
 
-## 🧪 Live Demo Test Script
+## Live Demo Test Script
 
 <details>
-<summary>🎬 Click to expand step-by-step presentation steps</summary>
+<summary>Click to expand step-by-step presentation steps</summary>
 
 Arrange two browser windows side-by-side:
 - **Window 1 (Mobile Fan)**: Open [http://localhost:3000/fan.html](http://localhost:3000/fan.html)
@@ -156,7 +156,7 @@ Arrange two browser windows side-by-side:
 
 ---
 
-## 🤖 Automated CLI Query Test
+## Automated CLI Query Test
 To instantly validate query routing, run this command in your terminal while the server is active:
 ```bash
 node test_queries.js
