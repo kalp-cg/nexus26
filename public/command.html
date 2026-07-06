@@ -35,7 +35,7 @@
   <div class="api-key-drawer hidden" id="api-key-drawer">
     <span class="drawer-title">Gemini API Key Manager</span>
     <div class="drawer-controls">
-      <input type="password" id="drawer-api-key" placeholder="Enter GEMINI_API_KEY here..." />
+      <input type="password" id="drawer-api-key" aria-label="Drawer Gemini API Key" placeholder="Enter GEMINI_API_KEY here..." />
       <button class="btn btn-primary" onclick="saveDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Save</button>
       <button class="btn btn-secondary" onclick="clearDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Clear</button>
     </div>
@@ -203,7 +203,7 @@
         <div class="broadcast-panel" style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border-light);">
           <h4 style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:0.5rem;">Emergency Broadcast Control</h4>
           <div style="display:flex; gap:0.5rem;">
-            <input type="text" id="broadcast-msg-input" placeholder="Type critical warning for all fans..." style="flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem 0.75rem; font-size:0.8rem; outline:none;" />
+            <input type="text" id="broadcast-msg-input" aria-label="Emergency Broadcast Message Input" placeholder="Type critical warning for all fans..." style="flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem 0.75rem; font-size:0.8rem; outline:none;" />
             <button class="btn btn-primary" onclick="sendEmergencyBroadcast()" style="padding:0.4rem 1rem; font-size:0.8rem; border-radius:6px; font-weight:700; background:var(--status-red); color:#fff;">
               Broadcast Alert
             </button>
@@ -233,7 +233,7 @@
         </div>
 
         <div class="console-input-row">
-          <input type="text" id="console-input" placeholder="Enter operational command or query (e.g. 'Show congested gates')..." onkeydown="handleConsoleKey(event)" />
+          <input type="text" id="console-input" aria-label="Operations Console Input" placeholder="Enter operational command or query (e.g. 'Show congested gates')..." onkeydown="handleConsoleKey(event)" />
           <button class="btn btn-primary" onclick="sendConsoleCommand()" style="border-radius:6px; font-weight:700;">Query</button>
         </div>
       </div>
@@ -255,21 +255,21 @@
         <div class="volunteer-form-card" style="margin-top:auto; padding-top:1rem; border-top:1px solid var(--border-light);">
           <h4 style="font-size:0.85rem; font-weight:700; margin-bottom:0.75rem; text-transform:uppercase; letter-spacing:1px; color:#b5c3d8;">Submit On-Ground Report</h4>
           <div style="display:flex; flex-direction:column; gap:0.5rem;">
-            <select id="report-zone" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem; font-size:0.8rem; outline:none;">
+            <select id="report-zone" aria-label="Incident Zone Location" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem; font-size:0.8rem; outline:none;">
               <option value="North Concourse">North Concourse</option>
               <option value="South Concourse">South Concourse</option>
               <option value="Gate A1 Entrance">Gate A1 Entrance</option>
               <option value="Gate A2 Entrance">Gate A2 Entrance</option>
               <option value="Gate B1 Entrance">Gate B1 Entrance</option>
             </select>
-            <select id="report-type" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem; font-size:0.8rem; outline:none;">
+            <select id="report-type" aria-label="Incident Category Type" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem; font-size:0.8rem; outline:none;">
               <option value="overflowing_bin">Overflowing Garbage Bin</option>
               <option value="crowd_surge">Crowd Congestion Surge</option>
               <option value="accessibility_blocked">Ramp Blocked / Access Issue</option>
               <option value="medical">Medical Alert / First Aid Needed</option>
               <option value="other">General Inquiry / Other</option>
             </select>
-            <input type="text" id="report-text" placeholder="Explain the issue details..." style="background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem 0.75rem; font-size:0.8rem; outline:none;" />
+            <input type="text" id="report-text" aria-label="Incident Description Text" placeholder="Explain the issue details..." style="background:rgba(0,0,0,0.3); border:1px solid var(--border-light); color:#fff; border-radius:6px; padding:0.4rem 0.75rem; font-size:0.8rem; outline:none;" />
             <button class="btn btn-secondary" onclick="submitVolunteerReport()" style="padding:0.4rem; font-size:0.8rem;">File Report</button>
           </div>
         </div>

@@ -1,13 +1,13 @@
 {
   "stadium_id": "sofi_stadium",
-  "timestamp": "2026-07-06T12:20:38.270Z",
+  "timestamp": "2026-07-06T14:15:10.290Z",
   "gates": [
     {
       "gate_id": "A1",
       "capacity": 4000,
-      "current_count": 3820,
-      "congestion_level": "critical",
-      "avg_wait_min": 22
+      "current_count": 2400,
+      "congestion_level": "high",
+      "avg_wait_min": 12
     },
     {
       "gate_id": "A2",

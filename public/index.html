@@ -27,7 +27,7 @@
         <h4>Gemini API Key Configuration</h4>
         <p>Enter your Gemini API key below to enable real-time function calling and translation. If left blank, the system automatically uses its rule-based fallback Mock-Agent to ensure a fully interactive demo.</p>
         <div class="api-input-group">
-          <input type="password" id="global-api-key" placeholder="Enter GEMINI_API_KEY here..." />
+          <input type="password" id="global-api-key" aria-label="Gemini API Key" placeholder="Enter GEMINI_API_KEY here..." />
           <button onclick="saveApiKey()" id="save-key-btn">Save Key</button>
           <span id="key-status" class="key-status-label status-idle">Not configured (Fallback Mode Active)</span>
         </div>

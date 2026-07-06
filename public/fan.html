@@ -32,7 +32,7 @@
   <div class="api-key-drawer hidden" id="api-key-drawer">
     <span class="drawer-title">Gemini API Key Manager</span>
     <div class="drawer-controls">
-      <input type="password" id="drawer-api-key" placeholder="Enter GEMINI_API_KEY here..." />
+      <input type="password" id="drawer-api-key" aria-label="Drawer Gemini API Key" placeholder="Enter GEMINI_API_KEY here..." />
       <button class="btn btn-primary" onclick="saveDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Save</button>
       <button class="btn btn-secondary" onclick="clearDrawerKey()" style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px;">Clear</button>
     </div>
@@ -205,7 +205,7 @@
           </div>
           
           <div class="chat-input-row">
-            <input type="text" id="chat-input" placeholder="Type message..." onkeydown="handleInputKey(event)" />
+            <input type="text" id="chat-input" aria-label="Type wayfinding query" placeholder="Type message..." onkeydown="handleInputKey(event)" />
             <button class="send-btn" onclick="sendTextMessage()" title="Send Text">
               SEND
             </button>

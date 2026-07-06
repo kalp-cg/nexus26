@@ -1,5 +1,65 @@
 [
   {
+    "report_id": "VR-6663",
+    "volunteer_id": "V-388",
+    "zone": "Gate B1",
+    "issue_type": "medical",
+    "text_raw": "First aid requested",
+    "timestamp": "2026-07-06T14:15:10.345Z",
+    "status": "dispatched",
+    "assigned_volunteer": "Maria (Gate A2)"
+  },
+  {
+    "report_id": "VR-6294",
+    "volunteer_id": "V-257",
+    "zone": "North Concourse",
+    "issue_type": "overflowing_bin",
+    "text_raw": "&lt;script&gt;alert(&quot;XSS Vulnerability Test&quot;)&lt;&#x2F;script&gt;",
+    "timestamp": "2026-07-06T14:15:10.329Z",
+    "status": "open",
+    "assigned_volunteer": null
+  },
+  {
+    "report_id": "VR-6917",
+    "volunteer_id": "V-967",
+    "zone": "Gate B1",
+    "issue_type": "medical",
+    "text_raw": "First aid requested",
+    "timestamp": "2026-07-06T14:14:50.918Z",
+    "status": "dispatched",
+    "assigned_volunteer": "Carlos (Transit Hub)"
+  },
+  {
+    "report_id": "VR-7588",
+    "volunteer_id": "V-718",
+    "zone": "North Concourse",
+    "issue_type": "overflowing_bin",
+    "text_raw": "&lt;script&gt;alert(&quot;XSS Vulnerability Test&quot;)&lt;&#x2F;script&gt;",
+    "timestamp": "2026-07-06T14:14:50.911Z",
+    "status": "open",
+    "assigned_volunteer": null
+  },
+  {
+    "report_id": "VR-8512",
+    "volunteer_id": "V-103",
+    "zone": "Gate B1",
+    "issue_type": "medical",
+    "text_raw": "First aid requested",
+    "timestamp": "2026-07-06T14:14:20.225Z",
+    "status": "dispatched",
+    "assigned_volunteer": "Carlos (Transit Hub)"
+  },
+  {
+    "report_id": "VR-5394",
+    "volunteer_id": "V-807",
+    "zone": "North Concourse",
+    "issue_type": "overflowing_bin",
+    "text_raw": "&lt;script&gt;alert(&quot;XSS Vulnerability Test&quot;)&lt;&#x2F;script&gt;",
+    "timestamp": "2026-07-06T14:14:20.213Z",
+    "status": "open",
+    "assigned_volunteer": null
+  },
+  {
     "report_id": "VR-1453",
     "volunteer_id": "V-601",
     "zone": "Gate A2 Entrance",

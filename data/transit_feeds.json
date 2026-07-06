@@ -1,7 +1,16 @@
 {
   "city": "Inglewood, CA",
   "lines": [
-    { "line": "K Line", "status": "delayed", "delay_min": 12, "next_departure": "21:26" },
-    { "line": "Shuttle Bus 3", "status": "on_time", "next_departure": "21:18" }
+    {
+      "line": "K Line",
+      "status": "delayed",
+      "delay_min": 30,
+      "next_departure": "21:26"
+    },
+    {
+      "line": "Shuttle Bus 3",
+      "status": "on_time",
+      "next_departure": "21:18"
+    }
   ]
 }

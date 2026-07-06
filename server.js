@@ -36,31 +36,75 @@ const sanitizeInput = (val) => {
     .replace(/\//g, "&#x2F;");
 };
 
+// Simple memory-based API Rate Limiter (Version 2.4)
+const ipRequestCounts = {};
+app.use((req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+  if (!ipRequestCounts[ip]) {
+    ipRequestCounts[ip] = [];
+  }
+  ipRequestCounts[ip] = ipRequestCounts[ip].filter(t => now - t < 60000);
+  if (ipRequestCounts[ip].length >= 180) { // Limit to 180 requests per minute
+    return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+  }
+  ipRequestCounts[ip].push(now);
+  next();
+});
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Path Helper for JSON data
-const getFilePath = (fileName) => path.join(__dirname, 'data', fileName);
+// Whitelist of permitted JSON database files
+const ALLOWED_FILES = [
+  'gate_sensors.json',
+  'volunteer_reports.json',
+  'transit_feeds.json',
+  'accessibility_routes.json',
+  'stadium_map_coords.json'
+];
 
-// Read / Write JSON helpers
-const readJSON = (fileName) => {
+// O(1) In-Memory DB cache
+const dbCache = {};
+
+// Load baseline JSONs into memory cache
+ALLOWED_FILES.forEach(fileName => {
   try {
-    const data = fs.readFileSync(getFilePath(fileName), 'utf8');
-    return JSON.parse(data);
+    const filePath = path.join(__dirname, 'data', fileName);
+    const content = fs.readFileSync(filePath, 'utf8');
+    dbCache[fileName] = JSON.parse(content);
   } catch (error) {
-    console.error(`Error reading ${fileName}:`, error);
+    console.error(`[DB Cache Seed Failed] ${fileName}:`, error);
+    dbCache[fileName] = null;
+  }
+});
+
+// Secure O(1) In-Memory JSON helpers (Path Traversal protected)
+const readJSON = (fileName) => {
+  if (!ALLOWED_FILES.includes(fileName)) {
+    console.error(`[Security Warning] Blocked unauthorized read of: ${fileName}`);
     return null;
   }
+  return dbCache[fileName];
 };
 
 const writeJSON = (fileName, data) => {
-  try {
-    fs.writeFileSync(getFilePath(fileName), JSON.stringify(data, null, 2), 'utf8');
-    return true;
-  } catch (error) {
-    console.error(`Error writing ${fileName}:`, error);
+  if (!ALLOWED_FILES.includes(fileName)) {
+    console.error(`[Security Warning] Blocked unauthorized write to: ${fileName}`);
     return false;
   }
+  
+  // Update cache instantly (O(1))
+  dbCache[fileName] = data;
+
+  // Asynchronous disk backup to prevent event loop blocking
+  const filePath = path.join(__dirname, 'data', fileName);
+  fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8', (err) => {
+    if (err) {
+      console.error(`[Async Disk Write Failed] ${fileName}:`, err);
+    }
+  });
+  return true;
 };
 
 // WebSocket Event Bus Broadcast
@@ -815,10 +859,14 @@ async function runFallbackMockAgent(persona, message, currentLocation, accessibi
 }
 
 // Start Server
-server.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(` Nexus26 - World Cup Operations Spine Server`);
-  console.log(` Running on: http://localhost:${PORT}`);
-  console.log(` WebSocket Spine: ws://localhost:${PORT}`);
-  console.log(`=======================================================`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(` Nexus26 - World Cup Operations Spine Server`);
+    console.log(` Running on: http://localhost:${PORT}`);
+    console.log(` WebSocket Spine: ws://localhost:${PORT}`);
+    console.log(`=======================================================`);
+  });
+}
+
+module.exports = { app, server };
