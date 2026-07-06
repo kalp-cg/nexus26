@@ -14,6 +14,28 @@ const wss = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 3000;
 
+// HTTP Security Headers Middleware (Version 2.3)
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ws: wss: https://generativelanguage.googleapis.com; img-src 'self' data:;");
+  next();
+});
+
+// XSS Sanitizer Input Escaper Helper
+const sanitizeInput = (val) => {
+  if (typeof val !== 'string') return val;
+  return val
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;")
+    .replace(/\//g, "&#x2F;");
+};
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -67,7 +89,11 @@ app.get('/api/sensors', (req, res) => {
 });
 
 app.post('/api/sensors/update', (req, res) => {
-  const { gate_id, congestion_level, current_count, avg_wait_min } = req.body;
+  const gate_id = sanitizeInput(req.body.gate_id);
+  const congestion_level = sanitizeInput(req.body.congestion_level);
+  const current_count = req.body.current_count;
+  const avg_wait_min = req.body.avg_wait_min;
+
   const sensorData = readJSON('gate_sensors.json');
   if (!sensorData) return res.status(500).json({ error: 'Failed to read sensor data' });
 
@@ -93,7 +119,10 @@ app.get('/api/transit', (req, res) => {
 });
 
 app.post('/api/transit/update', (req, res) => {
-  const { line, status, delay_min } = req.body;
+  const line = sanitizeInput(req.body.line);
+  const status = sanitizeInput(req.body.status);
+  const delay_min = Number(req.body.delay_min) || 0;
+
   const transitData = readJSON('transit_feeds.json');
   if (!transitData) return res.status(500).json({ error: 'Failed to read transit data' });
   
@@ -115,7 +144,9 @@ app.get('/api/reports', (req, res) => {
 });
 
 app.post('/api/reports', (req, res) => {
-  const { zone, issue_type, text_raw } = req.body;
+  const zone = sanitizeInput(req.body.zone);
+  const issue_type = sanitizeInput(req.body.issue_type);
+  const text_raw = sanitizeInput(req.body.text_raw);
   const reports = readJSON('volunteer_reports.json') || [];
   
   const newReport = {
@@ -140,7 +171,7 @@ app.post('/api/reports', (req, res) => {
 });
 
 app.post('/api/dispatch', (req, res) => {
-  const { report_id } = req.body;
+  const report_id = sanitizeInput(req.body.report_id);
   const reports = readJSON('volunteer_reports.json');
   if (!reports) return res.status(500).json({ error: 'Failed to read reports' });
 
@@ -204,7 +235,7 @@ app.post('/api/reset', (req, res) => {
 });
 
 app.post('/api/broadcast', (req, res) => {
-  const { message } = req.body;
+  const message = sanitizeInput(req.body.message);
   if (!message) return res.status(400).json({ error: 'Message content is required' });
   console.log(`[Emergency Broadcast] Message: "${message}"`);
   broadcast({ type: 'EMERGENCY_BROADCAST', data: { message, timestamp: new Date().toISOString() } });
@@ -398,15 +429,24 @@ const local_generate_reroute = async (stadium_id, destination_section, current_l
 
 // GEMINI INTEGRATION & FALLBACK ROUTER
 app.post('/api/chat/:persona', async (req, res) => {
-  const { persona } = req.params; // 'fan' or 'command'
-  const { message, history, userApiKey, current_location, accessibility_enabled } = req.body;
+  const persona = sanitizeInput(req.params.persona); // 'fan' or 'command'
+  const message = sanitizeInput(req.body.message);
+  const history = req.body.history;
+  const userApiKey = req.body.userApiKey; // Keep API Key raw, never leak or mutate
+  const current_location = req.body.current_location;
+  const accessibility_enabled = req.body.accessibility_enabled;
+  
   const activeKey = userApiKey || process.env.GEMINI_API_KEY;
+  const sanitizedHistory = (history || []).map(h => ({
+    role: sanitizeInput(h.role),
+    content: sanitizeInput(h.content)
+  }));
 
   console.log(`[Chat Request] Persona: ${persona} | Key present: ${!!activeKey} | Msg: "${message}"`);
 
   if (activeKey) {
     try {
-      const responseText = await runGeminiAgent(persona, message, history, activeKey, current_location, accessibility_enabled);
+      const responseText = await runGeminiAgent(persona, message, sanitizedHistory, activeKey, current_location, accessibility_enabled);
       return res.json({ text: responseText, mode: 'gemini' });
     } catch (err) {
       console.error('[Gemini API Error] Falling back to Mock-Agent:', err);
