@@ -4,6 +4,34 @@
 
 ---
 
+## Challenge Submission Overview
+
+### Chosen Vertical
+
+- **Vertical**: FIFA World Cup 2026 Stadium Operations, Fan Navigation, and Sustainability Assistance.
+- **Scope**: A bilingual mobile wayfinding Fan Companion linked directly to an Operations Command Center dashboard. Both interfaces sync through a shared real-time WebSocket Spine.
+
+### Approach and Logic
+
+- **Unified GenAI Backbone**: Powering both the Fan (Navigation) and Command (Staff Operations) personas from a unified Gemini function-calling backend.
+- **Real-time Dynamic Routing**: When a gate sensor spikes or accessibility conditions change, the backend triggers immediate reroutes via alternate gates and prompts safety assistance dispatches automatically.
+- **Production Safety & Fallbacks**: Features dual-mode fallback routing using a localized schema-matching agent to guarantee 100% offline uptime.
+
+### How the Solution Works
+
+1.  **WebSocket Event Spine (`server.js`)**: An Express & WebSocket server acting as the central message bus.
+2.  **GenAI Core (`lib/ai.js` & `lib/operations.js`)**: Orchestrates tool execution using `gemini-2.0-flash` (and fallback agents) on local JSON datasets.
+3.  **Procedural 3D Map (`stadium3d.js`)**: Uses Three.js/WebGL to draw dynamic glowing coordinate routes.
+4.  **Volunteer Dispatch Pipeline**: Leverages WebSockets to push incident dispatches to ground staff in real-time.
+
+### Assumptions Made
+
+- **Local Data Cache**: Loaded into O(1) cache memory on startup to support sub-millisecond API responses.
+- **Coordinate Grid Layout**: Coordinates for seats and gates map onto a normalized stadium grid.
+- **Bilingual Matchers**: Default queries fall back to English if the user input language is unrecognized.
+
+---
+
 ## One-Line Pitch
 
 **Nexus26 is a bilingual pair of GenAI surfaces — a fan-facing multilingual navigation companion and a command-center intelligence dashboard — both powered by the same Gemini function-calling backbone, so a single live signal (a gate sensor spike, a delayed subway train) simultaneously reroutes fans and alerts staff in real time.**
