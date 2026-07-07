@@ -5,8 +5,6 @@
  * @version 1.0.0
  */
 
-/* eslint-disable no-unused-vars */
-
 class Stadium3D {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
@@ -382,3 +380,5 @@ class Stadium3D {
     }
   }
 }
+
+window.Stadium3D = Stadium3D;

@@ -63,10 +63,10 @@ const localWriteJSON = (fileName, data) => writeJSON(fileName, data, __dirname);
  * @returns {number|null} Parsed number or null when invalid
  */
 const parseBoundedNumber = (value, min, max) => {
-  if (value === undefined || value === null || value === '') return undefined;
+  if (value === undefined || value === null || value === '') return { missing: true };
   const numberValue = Number(value);
   if (!Number.isFinite(numberValue) || numberValue < min || numberValue > max) {
-    return null;
+    return { invalid: true };
   }
   return numberValue;
 };
@@ -153,6 +153,14 @@ app.use((req, res, next) => {
     });
   }
   ipRequestCounts[ip].push(now);
+  // Periodic cleanup of stale IP entries to prevent memory leak
+  if (Object.keys(ipRequestCounts).length > 10000) {
+    const cutoff = now - 120000;
+    Object.keys(ipRequestCounts).forEach((k) => {
+      ipRequestCounts[k] = ipRequestCounts[k].filter((t) => t > cutoff);
+      if (ipRequestCounts[k].length === 0) delete ipRequestCounts[k];
+    });
+  }
   next();
 });
 
@@ -242,10 +250,10 @@ app.post('/api/sensors/update', (req, res) => {
   if (congestion_level && !validLevels.includes(congestion_level)) {
     return res.status(400).json({ error: `congestion_level must be one of: ${validLevels.join(', ')}` });
   }
-  if (current_count === null) {
+  if (current_count && current_count.invalid) {
     return res.status(400).json({ error: 'current_count must be a number between 0 and 100000' });
   }
-  if (avg_wait_min === null) {
+  if (avg_wait_min && avg_wait_min.invalid) {
     return res.status(400).json({ error: 'avg_wait_min must be a number between 0 and 240' });
   }
 
@@ -256,8 +264,8 @@ app.post('/api/sensors/update', (req, res) => {
   if (!gate) return res.status(404).json({ error: `Gate '${gate_id}' not found` });
 
   if (congestion_level) gate.congestion_level = congestion_level;
-  if (current_count !== undefined) gate.current_count = Number(current_count);
-  if (avg_wait_min !== undefined) gate.avg_wait_min = Number(avg_wait_min);
+  if (typeof current_count === 'number') gate.current_count = current_count;
+  if (typeof avg_wait_min === 'number') gate.avg_wait_min = avg_wait_min;
   sensorData.timestamp = new Date().toISOString();
 
   if (localWriteJSON('gate_sensors.json', sensorData)) {
@@ -290,7 +298,7 @@ app.post('/api/transit/update', (req, res) => {
   if (!VALID_TRANSIT_STATUSES.includes(status)) {
     return res.status(400).json({ error: `status must be one of: ${VALID_TRANSIT_STATUSES.join(', ')}` });
   }
-  if (delay_min === null) {
+  if (typeof delay_min !== 'number') {
     return res.status(400).json({ error: 'delay_min must be a number between 0 and 240' });
   }
 

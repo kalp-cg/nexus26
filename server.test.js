@@ -106,7 +106,9 @@ describe('Nexus26 REST API — Core Operations', () => {
   });
 
   test('POST /api/transit/update returns 404 for unknown line', async () => {
-    const res = await request(app).post('/api/transit/update').send({ line: 'Ghost Express', status: 'delayed' });
+    const res = await request(app)
+      .post('/api/transit/update')
+      .send({ line: 'Ghost Express', status: 'delayed', delay_min: 5 });
     expect(res.statusCode).toBe(404);
     expect(res.body).toHaveProperty('error');
   });

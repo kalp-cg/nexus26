@@ -21,15 +21,12 @@
     <a href="#command-main" class="skip-to-content">Skip to main content</a>
     <header class="app-header" role="banner">
       <div class="app-logo">
-        <a
-          href="index.html"
-          style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem"
-        >
-          <span class="app-logo-badge" style="background: var(--accent-cyan); color: #0f172a">COMMAND STAFF</span>
+        <a href="index.html" class="logo-link">
+          <span class="app-logo-badge">COMMAND STAFF</span>
           <h2>NEXUS<span>26</span></h2>
         </a>
       </div>
-      <div style="display: flex; gap: 1rem; align-items: center">
+      <div class="flex-row-gap1">
         <button
           class="btn-settings"
           onclick="toggleApiDrawer()"
@@ -70,20 +67,8 @@
           autocomplete="off"
           placeholder="Enter GEMINI_API_KEY here..."
         />
-        <button
-          class="btn btn-primary"
-          onclick="saveDrawerKey()"
-          style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px"
-        >
-          Save
-        </button>
-        <button
-          class="btn btn-secondary"
-          onclick="clearDrawerKey()"
-          style="padding: 0.35rem 1rem; font-size: 0.75rem; border-radius: 4px"
-        >
-          Clear
-        </button>
+        <button class="btn btn-primary btn-sm" onclick="saveDrawerKey()">Save</button>
+        <button class="btn btn-secondary btn-sm" onclick="clearDrawerKey()">Clear</button>
       </div>
     </div>
 

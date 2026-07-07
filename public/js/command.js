@@ -6,8 +6,6 @@
  * @version 1.0.0
  */
 
-/* eslint-disable no-unused-vars */
-
 'use strict';
 
 // State and connection
@@ -17,7 +15,6 @@ let activeReports = [];
 let activeMapLayer = 'crowd';
 const savedApiKey = localStorage.getItem('gemini_api_key') || '';
 let stadium3d = null;
-let currentMapView = '2d';
 
 // Node elements
 const wsStatusDot = document.getElementById('ws-status');
@@ -535,6 +532,17 @@ function refreshMapLayerHighlights() {
             circle.classList.add('section-highlight-active');
           }
         }
+
+        // Bind functions called from HTML attributes
+        window.dispatchVolunteer = dispatchVolunteer;
+        window.submitVolunteerReport = submitVolunteerReport;
+        window.handleConsoleKey = handleConsoleKey;
+        window.resetSystemState = resetSystemState;
+        window.sendEmergencyBroadcast = sendEmergencyBroadcast;
+        window.triggerScenario = triggerScenario;
+        window.saveDrawerKey = saveDrawerKey;
+        window.clearDrawerKey = clearDrawerKey;
+        window.toggleMapView = toggleMapView;
       }
     }
   });
@@ -774,8 +782,6 @@ function clearDrawerKey() {
 
 // Map 2D / 3D View Toggler (Version 2.2)
 function toggleMapView(view) {
-  currentMapView = view;
-
   const btn2D = document.getElementById('btn-view-2d');
   const btn3D = document.getElementById('btn-view-3d');
   const svgMap = document.getElementById('stadium-heatmap');

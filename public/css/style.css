@@ -9,6 +9,8 @@
   --text-primary: #f8fafc;
   --text-muted: #94a3b8;
   --border-light: rgba(255, 255, 255, 0.08);
+
+  --font-code: 'Space Grotesk', 'Courier New', monospace;
 }
 
 * {
@@ -45,6 +47,35 @@
 /* Utility: Hidden elements */
 .hidden {
   display: none !important;
+}
+
+/* Utility: Flex row with gap */
+.flex-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.flex-row-gap1 {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Utility: Small button padding for inline controls */
+.btn-sm {
+  padding: 0.35rem 1rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+}
+
+/* Utility: Inherit link styling for header logo */
+.logo-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 body {

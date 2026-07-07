@@ -6,8 +6,6 @@
  * @version 1.0.0
  */
 
-/* eslint-disable no-unused-vars */
-
 'use strict';
 
 // Web Socket and State management
@@ -17,7 +15,6 @@ let accessibilityEnabled = false;
 let chatHistory = [];
 let activePathData = null;
 let stadium3d = null;
-let currentMapView = '2d';
 
 // Node elements
 const wsStatusDot = document.getElementById('ws-status');
@@ -115,6 +112,16 @@ function connectWebSocket() {
               recalculateActiveRoute();
             }
           }
+
+          // Bind functions called from HTML attributes
+          window.setLanguage = setLanguage;
+          window.toggleAccessibility = toggleAccessibility;
+          window.scanTicket = scanTicket;
+          window.handleInputKey = handleInputKey;
+          window.startVoiceAssistant = startVoiceAssistant;
+          window.saveDrawerKey = saveDrawerKey;
+          window.clearDrawerKey = clearDrawerKey;
+          window.toggleMapView = toggleMapView;
           break;
         case 'REROUTE_FAN':
           drawReroute(msg.data);
@@ -522,8 +529,6 @@ function clearDrawerKey() {
 
 // Map 2D / 3D View Toggler (Version 2.2)
 function toggleMapView(view) {
-  currentMapView = view;
-
   const btn2D = document.getElementById('btn-view-2d');
   const btn3D = document.getElementById('btn-view-3d');
   const svgMap = document.getElementById('stadium-map');

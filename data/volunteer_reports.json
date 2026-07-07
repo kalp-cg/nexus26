@@ -6,7 +6,7 @@
     "issue_type": "overflowing_bin",
     "text_raw": "Bins near section 118 are overflowing, getting messy",
     "timestamp": "2026-07-06T16:32:27.862Z",
-    "status": "open",
-    "assigned_volunteer": null
+    "status": "dispatched",
+    "assigned_volunteer": "Jessica (Area General Zone)"
   }
 ]
