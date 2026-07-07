@@ -11,13 +11,13 @@
 - **Vertical**: FIFA World Cup 2026 Stadium Operations, Fan Navigation, and Sustainability Assistance.
 - **Scope**: A bilingual mobile wayfinding Fan Companion linked directly to an Operations Command Center dashboard. Both interfaces sync through a shared real-time WebSocket Spine.
 
-### Approach and Logic
+### Approach & Logic
 
 - **Unified GenAI Backbone**: Powering both the Fan (Navigation) and Command (Staff Operations) personas from a unified Gemini function-calling backend.
 - **Real-time Dynamic Routing**: When a gate sensor spikes or accessibility conditions change, the backend triggers immediate reroutes via alternate gates and prompts safety assistance dispatches automatically.
 - **Production Safety & Fallbacks**: Features dual-mode fallback routing using a localized schema-matching agent to guarantee 100% offline uptime.
 
-### How the Solution Works
+### How it works
 
 1.  **WebSocket Event Spine (`server.js`)**: An Express & WebSocket server acting as the central message bus.
 2.  **GenAI Core (`lib/ai.js` & `lib/operations.js`)**: Orchestrates tool execution using `gemini-2.0-flash` (and fallback agents) on local JSON datasets.
