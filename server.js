@@ -63,10 +63,10 @@ const localWriteJSON = (fileName, data) => writeJSON(fileName, data, __dirname);
  * @returns {number|null} Parsed number or null when invalid
  */
 const parseBoundedNumber = (value, min, max) => {
-  if (value === undefined || value === null || value === '') return { missing: true };
+  if (value === undefined || value === null || value === '') return undefined;
   const numberValue = Number(value);
   if (!Number.isFinite(numberValue) || numberValue < min || numberValue > max) {
-    return { invalid: true };
+    return null;
   }
   return numberValue;
 };
@@ -250,10 +250,10 @@ app.post('/api/sensors/update', (req, res) => {
   if (congestion_level && !validLevels.includes(congestion_level)) {
     return res.status(400).json({ error: `congestion_level must be one of: ${validLevels.join(', ')}` });
   }
-  if (current_count && current_count.invalid) {
+  if (current_count === null) {
     return res.status(400).json({ error: 'current_count must be a number between 0 and 100000' });
   }
-  if (avg_wait_min && avg_wait_min.invalid) {
+  if (avg_wait_min === null) {
     return res.status(400).json({ error: 'avg_wait_min must be a number between 0 and 240' });
   }
 
@@ -264,8 +264,8 @@ app.post('/api/sensors/update', (req, res) => {
   if (!gate) return res.status(404).json({ error: `Gate '${gate_id}' not found` });
 
   if (congestion_level) gate.congestion_level = congestion_level;
-  if (typeof current_count === 'number') gate.current_count = current_count;
-  if (typeof avg_wait_min === 'number') gate.avg_wait_min = avg_wait_min;
+  if (current_count !== undefined) gate.current_count = Number(current_count);
+  if (avg_wait_min !== undefined) gate.avg_wait_min = Number(avg_wait_min);
   sensorData.timestamp = new Date().toISOString();
 
   if (localWriteJSON('gate_sensors.json', sensorData)) {
@@ -298,7 +298,7 @@ app.post('/api/transit/update', (req, res) => {
   if (!VALID_TRANSIT_STATUSES.includes(status)) {
     return res.status(400).json({ error: `status must be one of: ${VALID_TRANSIT_STATUSES.join(', ')}` });
   }
-  if (typeof delay_min !== 'number') {
+  if (delay_min === null) {
     return res.status(400).json({ error: 'delay_min must be a number between 0 and 240' });
   }
 
