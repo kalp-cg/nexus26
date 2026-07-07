@@ -404,6 +404,18 @@ describe('Nexus26 Core Library Units', () => {
     const deDefault = await runFallbackMockAgent('fan', 'unbekanntes wort', [200, 420], false);
     expect(deDefault).toContain('Offline-Modus');
 
+    // Sustainability/Waste fallback checks
+    const enWaste = await runFallbackMockAgent('fan', 'trash overflowing section 102', [200, 420], false);
+    expect(enWaste).toContain('overflowing waste bin');
+    expect(enWaste).toContain('Section 102');
+
+    const esWaste = await runFallbackMockAgent('fan', 'basura llena puerta a1', [200, 420], false);
+    expect(esWaste).toContain('contenedor lleno');
+    expect(esWaste).toContain('Gate A1');
+
+    const deWaste = await runFallbackMockAgent('fan', 'mülleimer voll', [200, 420], false);
+    expect(deWaste).toContain('Mülleimer');
+
     // Default system fallback
     const result = await runFallbackMockAgent('unknown_persona', 'anything', null, false);
     expect(result).toContain('System active');
