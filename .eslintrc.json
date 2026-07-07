@@ -26,6 +26,9 @@
     "no-trailing-spaces": "warn",
     "eol-last": ["warn", "always"],
     "no-multiple-empty-lines": ["warn", { "max": 2 }],
-    "comma-dangle": ["warn", "only-multiline"]
+    "comma-dangle": ["warn", "only-multiline"],
+    "prefer-const": "error",
+    "eqeqeq": "error",
+    "no-var": "error"
   }
 }
