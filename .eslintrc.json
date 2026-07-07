@@ -22,7 +22,7 @@
     "no-console": "off",
     "semi": ["error", "always"],
     "quotes": ["warn", "single", { "avoidEscape": true }],
-    "indent": ["warn", 2],
+    "indent": ["warn", 2, { "SwitchCase": 1 }],
     "no-trailing-spaces": "warn",
     "eol-last": ["warn", "always"],
     "no-multiple-empty-lines": ["warn", { "max": 2 }],
