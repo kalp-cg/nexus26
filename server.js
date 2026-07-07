@@ -190,12 +190,34 @@ initOperations(broadcast, __dirname);
 
 // WebSocket connection handler
 wss.on('connection', (ws) => {
+  ws.isAlive = true;
+  ws.on('pong', () => {
+    ws.isAlive = true;
+  });
+
   log('INFO', 'WS', 'Client connected');
   ws.send(JSON.stringify({ type: 'WELCOME', message: 'Connected to Nexus26 Live Spine' }));
 
   ws.on('close', () => {
     log('INFO', 'WS', 'Client disconnected');
   });
+});
+
+// Heartbeat interval to prune dead sockets
+const heartbeatInterval = setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) {
+      log('INFO', 'WS', 'Terminating dead WebSocket connection');
+      return ws.terminate();
+    }
+    ws.isAlive = false;
+    ws.ping();
+  });
+}, 30000);
+
+server.on('close', () => {
+  clearInterval(heartbeatInterval);
+  wss.close();
 });
 
 // ─── REST API Endpoints ──────────────────────────────────────────────────────

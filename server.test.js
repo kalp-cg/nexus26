@@ -26,8 +26,10 @@ const { app, server } = require('./server');
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 afterAll((done) => {
-  if (server && server.listening) {
-    server.close(done);
+  if (server) {
+    server.close(() => {
+      done();
+    });
   } else {
     done();
   }
@@ -390,25 +392,19 @@ describe('Nexus26 REST API — Core Operations', () => {
   });
 
   test('POST /api/sensors/update accepts update with only gate_id (partial update)', async () => {
-    const res = await request(app)
-      .post('/api/sensors/update')
-      .send({ gate_id: 'A1' });
+    const res = await request(app).post('/api/sensors/update').send({ gate_id: 'A1' });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
   test('POST /api/transit/update returns 400 when line is missing', async () => {
-    const res = await request(app)
-      .post('/api/transit/update')
-      .send({ status: 'delayed', delay_min: 10 });
+    const res = await request(app).post('/api/transit/update').send({ status: 'delayed', delay_min: 10 });
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toContain('line');
   });
 
   test('POST /api/transit/update returns 400 when status is missing', async () => {
-    const res = await request(app)
-      .post('/api/transit/update')
-      .send({ line: 'K Line', delay_min: 10 });
+    const res = await request(app).post('/api/transit/update').send({ line: 'K Line', delay_min: 10 });
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toContain('status');
   });
@@ -429,17 +425,13 @@ describe('Nexus26 REST API — Core Operations', () => {
 
   test('POST /api/chat/fan rejects messages that are too long', async () => {
     const longMessage = 'a'.repeat(1201);
-    const res = await request(app)
-      .post('/api/chat/fan')
-      .send({ message: longMessage, history: [] });
+    const res = await request(app).post('/api/chat/fan').send({ message: longMessage, history: [] });
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toContain('message');
   });
 
   test('POST /api/chat/fan uses fallback when history is undefined (missing)', async () => {
-    const res = await request(app)
-      .post('/api/chat/fan')
-      .send({ message: 'hello' });
+    const res = await request(app).post('/api/chat/fan').send({ message: 'hello' });
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('text');
   });
@@ -453,16 +445,12 @@ describe('Nexus26 REST API — Core Operations', () => {
   });
 
   test('Requests from allowed CORS origin set the Access-Control-Allow-Origin header', async () => {
-    const res = await request(app)
-      .get('/api/sensors')
-      .set('Origin', 'http://localhost:3000');
+    const res = await request(app).get('/api/sensors').set('Origin', 'http://localhost:3000');
     expect(res.headers['access-control-allow-origin']).toBe('http://localhost:3000');
   });
 
   test('Requests from disallowed CORS origin do not set Access-Control-Allow-Origin header', async () => {
-    const res = await request(app)
-      .get('/api/sensors')
-      .set('Origin', 'http://malicious-site.com');
+    const res = await request(app).get('/api/sensors').set('Origin', 'http://malicious-site.com');
     expect(res.headers['access-control-allow-origin']).toBeUndefined();
   });
 
