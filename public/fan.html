@@ -115,7 +115,19 @@
 
           <!-- Smart Wallet Ticket Card -->
           <div class="ticket-card" id="ticket-card">
-            <div class="ticket-header" onclick="toggleTicketDetails()">
+            <div
+              class="ticket-header"
+              onclick="toggleTicketDetails()"
+              role="button"
+              tabindex="0"
+              onkeydown="
+                if (event.key === 'Enter' || event.key === ' ') {
+                  toggleTicketDetails();
+                  event.preventDefault();
+                }
+              "
+              aria-label="Toggle Digital Match Ticket Details"
+            >
               <span>Digital Match Ticket</span>
               <span id="ticket-toggle-text">[Show]</span>
             </div>
