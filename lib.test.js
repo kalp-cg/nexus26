@@ -369,7 +369,40 @@ describe('Nexus26 Core Library Units', () => {
 
     // German/unknown fallback
     const deFallback = await runFallbackMockAgent('fan', 'danke schon sehr', [200, 420], false);
-    expect(deFallback).toContain('welcome');
+    expect(deFallback).toContain('geschehen');
+
+    const deGreet = await runFallbackMockAgent('fan', 'hallo wie geht es dir', [200, 420], false);
+    expect(deGreet).toContain('Stadionbegleiter');
+
+    const deFood = await runFallbackMockAgent('fan', 'wo gibt es essen und trinken', [200, 420], false);
+    expect(deFood).toContain('Speisen');
+
+    const deExit = await runFallbackMockAgent('fan', 'wo ist der ausgang', [200, 420], false);
+    expect(deExit).toContain('Hauptausgänge');
+
+    const deTransit = await runFallbackMockAgent('fan', 'ist die u-bahn verspätet', [200, 420], false);
+    expect(deTransit).toContain('Echtzeit-Verkehrsdaten');
+
+    const deAccess = await runFallbackMockAgent('fan', 'rollstuhlrampe für a2', [200, 420], false);
+    expect(deAccess).toContain('Barrierefreie Route');
+
+    const deAccessA1 = await runFallbackMockAgent('fan', 'rollstuhlrampe für a1', [200, 420], false);
+    expect(deAccessA1).toContain('Tor A1 verfügt über keine rollstuhlgerechte Rampe');
+
+    const deRoute = await runFallbackMockAgent('fan', 'route zu sektion 102', [200, 420], false);
+    expect(deRoute).toContain('Sektion 102');
+
+    const dePolicy = await runFallbackMockAgent('fan', 'richtlinien compliance rule', [200, 420], false);
+    expect(dePolicy).toContain('RICHTLINIEN');
+
+    const deMatch = await runFallbackMockAgent('fan', 'wer spielt heute spiel', [200, 420], false);
+    expect(deMatch).toContain('USA gegen Mexiko');
+
+    const deCap = await runFallbackMockAgent('fan', 'what can you do hilfe', [200, 420], false);
+    expect(deCap).toContain('Ich kann Ihnen helfen');
+
+    const deDefault = await runFallbackMockAgent('fan', 'unbekanntes wort', [200, 420], false);
+    expect(deDefault).toContain('Offline-Modus');
 
     // Default system fallback
     const result = await runFallbackMockAgent('unknown_persona', 'anything', null, false);
