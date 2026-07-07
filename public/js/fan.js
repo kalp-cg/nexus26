@@ -12,7 +12,7 @@
 let socket = null;
 let currentLanguage = 'en';
 let accessibilityEnabled = false;
-let chatHistory = [];
+const chatHistory = [];
 let activePathData = null;
 let stadium3d = null;
 
@@ -34,7 +34,7 @@ const fanPath = document.getElementById('fan-path');
 const userPin = document.getElementById('user-pin');
 
 // Speech API references
-let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let isSpeaking = false;
 

@@ -10,7 +10,7 @@
 
 // State and connection
 let socket = null;
-let chatHistory = [];
+const chatHistory = [];
 let activeReports = [];
 let activeMapLayer = 'crowd';
 const savedApiKey = localStorage.getItem('gemini_api_key') || '';
