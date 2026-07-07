@@ -18,6 +18,7 @@ class Stadium3D {
     this.controls = null;
 
     this.gateSpheres = {};
+
     this.gateLines = {};
     this.pathMesh = null;
     this.userPinMesh = null;

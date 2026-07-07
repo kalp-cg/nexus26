@@ -3,7 +3,7 @@
  * @description Real-time WebSocket event bus connecting the Fan Companion and
  *   Command Center dashboards. Handles REST API data operations, Gemini AI
  *   function-calling integration, input sanitization, and security enforcement.
- * @version 1.0.0
+ * @version 1.1.0
  * @author Nexus26 Team
  */
 

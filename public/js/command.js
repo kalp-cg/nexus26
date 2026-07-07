@@ -75,54 +75,54 @@ function connectWebSocket() {
       console.log('[WS] Received message:', msg);
 
       switch (msg.type) {
-        case 'SENSOR_UPDATE':
-          updateHeatmapVisuals(msg.data.gates);
-          updateTestBenchCounters(msg.data.gates);
-          // Check if any gates just crossed into critical and push an operational alert
-          msg.data.gates.forEach((gate) => {
-            if (gate.congestion_level === 'critical') {
-              pushSystemAlert(
-                `Gate ${gate.gate_id} count surge (${gate.current_count}/hr). Wait time: ${gate.avg_wait_min}m.`
-              );
-            }
-          });
-          updateKpiStats();
-          break;
-        case 'NEW_REPORT':
-          activeReports.unshift(msg.data);
-          prependAlertToFeed(msg.data);
-          updateAlertCounter();
-          refreshMapLayerHighlights();
-          updateKpiStats();
-          break;
-        case 'DISPATCH_VOLUNTEER': {
-          const rep = activeReports.find((x) => x.report_id === msg.data.report_id);
-          if (rep) {
-            rep.status = msg.data.status;
-            rep.assigned_volunteer = msg.data.assigned_volunteer;
+      case 'SENSOR_UPDATE':
+        updateHeatmapVisuals(msg.data.gates);
+        updateTestBenchCounters(msg.data.gates);
+        // Check if any gates just crossed into critical and push an operational alert
+        msg.data.gates.forEach((gate) => {
+          if (gate.congestion_level === 'critical') {
+            pushSystemAlert(
+              `Gate ${gate.gate_id} count surge (${gate.current_count}/hr). Wait time: ${gate.avg_wait_min}m.`
+            );
           }
-          updateAlertDispatchStatus(msg.data);
-          updateAlertCounter();
-          refreshMapLayerHighlights();
-          updateKpiStats();
-          break;
+        });
+        updateKpiStats();
+        break;
+      case 'NEW_REPORT':
+        activeReports.unshift(msg.data);
+        prependAlertToFeed(msg.data);
+        updateAlertCounter();
+        refreshMapLayerHighlights();
+        updateKpiStats();
+        break;
+      case 'DISPATCH_VOLUNTEER': {
+        const rep = activeReports.find((x) => x.report_id === msg.data.report_id);
+        if (rep) {
+          rep.status = msg.data.status;
+          rep.assigned_volunteer = msg.data.assigned_volunteer;
         }
-        case 'EMERGENCY_BROADCAST':
-          appendConsoleBubble('assistant', `EMERGENCY ALERT BROADCASTED: "${msg.data.message}"`);
-          break;
-        case 'TRANSIT_UPDATE':
-          updateKpiStats();
-          break;
-        case 'RESET_SYSTEM':
-          activeReports = msg.data.reports || [];
-          updateHeatmapVisuals(msg.data.sensors.gates);
-          updateTestBenchCounters(msg.data.sensors.gates);
-          loadReportsList(activeReports);
-          updateAlertCounter();
-          refreshMapLayerHighlights();
-          updateKpiStats();
-          appendConsoleBubble('assistant', 'SYSTEM DATA RESET: Baseline operating metrics loaded. Sensors normalized.');
-          break;
+        updateAlertDispatchStatus(msg.data);
+        updateAlertCounter();
+        refreshMapLayerHighlights();
+        updateKpiStats();
+        break;
+      }
+      case 'EMERGENCY_BROADCAST':
+        appendConsoleBubble('assistant', `EMERGENCY ALERT BROADCASTED: "${msg.data.message}"`);
+        break;
+      case 'TRANSIT_UPDATE':
+        updateKpiStats();
+        break;
+      case 'RESET_SYSTEM':
+        activeReports = msg.data.reports || [];
+        updateHeatmapVisuals(msg.data.sensors.gates);
+        updateTestBenchCounters(msg.data.sensors.gates);
+        loadReportsList(activeReports);
+        updateAlertCounter();
+        refreshMapLayerHighlights();
+        updateKpiStats();
+        appendConsoleBubble('assistant', 'SYSTEM DATA RESET: Baseline operating metrics loaded. Sensors normalized.');
+        break;
       }
     } catch (err) {
       console.error('[WS] Error processing message:', err);

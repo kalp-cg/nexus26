@@ -378,4 +378,106 @@ describe('Nexus26 REST API — Core Operations', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.text).toContain('COMPLIANCE SOP');
   });
+
+  // ── Additional Branch Coverage ─────────────────────────────────────────────
+
+  test('POST /api/sensors/update validates avg_wait_min out of range', async () => {
+    const res = await request(app)
+      .post('/api/sensors/update')
+      .send({ gate_id: 'A1', congestion_level: 'high', current_count: 1200, avg_wait_min: -5 });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toContain('avg_wait_min');
+  });
+
+  test('POST /api/sensors/update accepts update with only gate_id (partial update)', async () => {
+    const res = await request(app)
+      .post('/api/sensors/update')
+      .send({ gate_id: 'A1' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  test('POST /api/transit/update returns 400 when line is missing', async () => {
+    const res = await request(app)
+      .post('/api/transit/update')
+      .send({ status: 'delayed', delay_min: 10 });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toContain('line');
+  });
+
+  test('POST /api/transit/update returns 400 when status is missing', async () => {
+    const res = await request(app)
+      .post('/api/transit/update')
+      .send({ line: 'K Line', delay_min: 10 });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toContain('status');
+  });
+
+  test('POST /api/dispatch returns 400 when report_id is missing', async () => {
+    const res = await request(app).post('/api/dispatch').send({});
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toContain('report_id');
+  });
+
+  test('POST /api/reports rejects invalid issue_type', async () => {
+    const res = await request(app)
+      .post('/api/reports')
+      .send({ zone: 'North Concourse', issue_type: 'invalid_type', text_raw: 'Something happened' });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toContain('issue_type');
+  });
+
+  test('POST /api/chat/fan rejects messages that are too long', async () => {
+    const longMessage = 'a'.repeat(1201);
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: longMessage, history: [] });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toContain('message');
+  });
+
+  test('POST /api/chat/fan uses fallback when history is undefined (missing)', async () => {
+    const res = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'hello' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('text');
+  });
+
+  test('OPTIONS request returns 204 for CORS preflight', async () => {
+    const res = await request(app)
+      .options('/api/sensors')
+      .set('Origin', 'http://localhost:3000')
+      .set('Access-Control-Request-Method', 'POST');
+    expect(res.statusCode).toBe(204);
+  });
+
+  test('Requests from allowed CORS origin set the Access-Control-Allow-Origin header', async () => {
+    const res = await request(app)
+      .get('/api/sensors')
+      .set('Origin', 'http://localhost:3000');
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:3000');
+  });
+
+  test('Requests from disallowed CORS origin do not set Access-Control-Allow-Origin header', async () => {
+    const res = await request(app)
+      .get('/api/sensors')
+      .set('Origin', 'http://malicious-site.com');
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  test('POST /api/chat/command processes surge crowd queries', async () => {
+    const res = await request(app)
+      .post('/api/chat/command')
+      .send({ message: 'back crowd gate congestion check', history: [] });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.text).toBeDefined();
+  });
+
+  test('GET /api/sensors returns security headers', async () => {
+    const res = await request(app).get('/api/sensors');
+    expect(res.headers['x-frame-options']).toBe('DENY');
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['x-xss-protection']).toBe('1; mode=block');
+  });
 });

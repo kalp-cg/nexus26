@@ -107,6 +107,16 @@ describe('Nexus26 Core Library Units', () => {
   });
 
   // ── Database Module Tests ─────────────────────────────────────────────────────
+  test('ALLOWED_FILES whitelist contains expected data files', () => {
+    expect(ALLOWED_FILES).toContain('gate_sensors.json');
+    expect(ALLOWED_FILES).toContain('volunteer_reports.json');
+    expect(ALLOWED_FILES).toContain('transit_feeds.json');
+    expect(ALLOWED_FILES).toContain('accessibility_routes.json');
+    expect(ALLOWED_FILES).toContain('stadium_map_coords.json');
+    expect(ALLOWED_FILES).toContain('fifa_compliance_manual.md');
+    expect(ALLOWED_FILES).not.toContain('unauthorized_file.json');
+  });
+
   test('readJSON rejects files not in whitelist', () => {
     expect(readJSON('unauthorized_file.json')).toBeNull();
   });
@@ -126,6 +136,35 @@ describe('Nexus26 Core Library Units', () => {
   });
 
   // ── Operations Module Tests ──────────────────────────────────────────────────
+  test('local_get_transit_status returns transit feed data', async () => {
+    const result = await local_get_transit_status('Inglewood');
+    expect(result).toHaveProperty('lines');
+    expect(Array.isArray(result.lines)).toBe(true);
+    expect(result.lines.length).toBeGreaterThan(0);
+  });
+
+  test('local_query_open_reports filters by issue_type, zone, and status', async () => {
+    // Seed a medical report
+    await local_log_volunteer_report('Gate A1', 'medical', 'Test medical report');
+
+    // Filter by issue_type
+    const medicalReports = await local_query_open_reports('medical', null, null);
+    expect(medicalReports.length).toBeGreaterThan(0);
+    expect(medicalReports.every((r) => r.issue_type === 'medical')).toBe(true);
+
+    // Filter by zone
+    const zoneReports = await local_query_open_reports(null, 'Gate A1', null);
+    expect(zoneReports.length).toBeGreaterThan(0);
+
+    // Filter by status
+    const openReports = await local_query_open_reports(null, null, 'open');
+    expect(openReports.every((r) => r.status === 'open')).toBe(true);
+
+    // Status 'all' returns everything
+    const allReports = await local_query_open_reports(null, null, 'all');
+    expect(allReports.length).toBeGreaterThanOrEqual(openReports.length);
+  });
+
   test('local_check_gate_congestion with invalid gate returns error', async () => {
     const result = await local_check_gate_congestion('sofi_stadium', 'invalid_gate');
     expect(result).toHaveProperty('error');
@@ -170,6 +209,36 @@ describe('Nexus26 Core Library Units', () => {
 
     // Restore
     gateA1.congestion_level = prevLevel;
+  });
+
+  test('local_generate_reroute handles all gate-to-section mappings', async () => {
+    // Section mapped to A2
+    const routeA2 = await local_generate_reroute('sofi_stadium', '103', [200, 420], 'high');
+    expect(routeA2).toHaveProperty('gate_used');
+    expect(routeA2.original_gate).toBe('A2');
+
+    // Section mapped to B1
+    const routeB1 = await local_generate_reroute('sofi_stadium', '115', [200, 420], 'high');
+    expect(routeB1).toHaveProperty('gate_used');
+    expect(routeB1.original_gate).toBe('B1');
+
+    // All gates congested — reroute stays on original
+    const sensorData = readJSON('gate_sensors.json');
+    sensorData.gates.forEach((g) => {
+      g.congestion_level = 'high';
+    });
+    const routeNoAlt = await local_generate_reroute('sofi_stadium', '102', [200, 420], 'high');
+    expect(routeNoAlt).toHaveProperty('instructions');
+    // Restore
+    sensorData.gates.forEach((g) => {
+      g.congestion_level = 'low';
+    });
+  });
+
+  test('local_check_gate_congestion returns all gates when no gate_id given', async () => {
+    const result = await local_check_gate_congestion('sofi_stadium');
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBeGreaterThan(0);
   });
 
   // ── AI Module Tests ──────────────────────────────────────────────────────────
@@ -247,6 +316,109 @@ describe('Nexus26 Core Library Units', () => {
 
     // Restore gates
     sensorData.gates = prevGates;
+  });
+
+  test('runFallbackMockAgent command persona handles high congestion', async () => {
+    const sensorData = readJSON('gate_sensors.json');
+    const gateA1 = sensorData.gates.find((g) => g.gate_id === 'A1');
+    const prevLevel = gateA1.congestion_level;
+    gateA1.congestion_level = 'high';
+
+    const result = await runFallbackMockAgent('command', 'Which gates are congested?', null, false);
+    expect(result).toContain('HIGH');
+
+    // Test critical gate
+    gateA1.congestion_level = 'critical';
+    const resultCritical = await runFallbackMockAgent('command', 'crowd congestion gate', null, false);
+    expect(resultCritical).toContain('CRITICAL');
+
+    // Restore
+    gateA1.congestion_level = prevLevel;
+  });
+
+  test('runFallbackMockAgent fan persona handles all intents and German fallback', async () => {
+    const greetFr = await runFallbackMockAgent('fan', 'bonjour comment', [200, 420], false);
+    expect(greetFr).toContain('stade');
+
+    const greetEs = await runFallbackMockAgent('fan', 'hola amigo', [200, 420], false);
+    expect(greetEs).toContain('Nexus26');
+
+    const foodFr = await runFallbackMockAgent('fan', 'comment trouver la section des concessions?', [200, 420], false);
+    expect(foodFr).toContain('concessions');
+
+    const foodEs = await runFallbackMockAgent('fan', 'donde comida estadio', [200, 420], false);
+    expect(foodEs).toContain('concesiones');
+
+    const exitEs = await runFallbackMockAgent('fan', 'como salir del estadio', [200, 420], false);
+    expect(exitEs).toContain('salida');
+
+    const exitFr = await runFallbackMockAgent('fan', 'comment sortir porte', [200, 420], false);
+    expect(exitFr).toContain('Porte');
+
+    const thankEs = await runFallbackMockAgent('fan', 'gracias estadio', [200, 420], false);
+    expect(thankEs).toContain('partido');
+
+    const thankFr = await runFallbackMockAgent('fan', 'merci beaucoup', [200, 420], false);
+    expect(thankFr).toContain('match');
+
+    const matchEs = await runFallbackMockAgent('fan', 'quien juega estadio hoy partido equipo', [200, 420], false);
+    expect(matchEs).toContain('USA contra');
+
+    const policyEs = await runFallbackMockAgent('fan', 'politica cumplimiento estadio rule', [200, 420], false);
+    expect(policyEs).toContain('POL');
+
+    // German/unknown fallback
+    const deFallback = await runFallbackMockAgent('fan', 'danke schon sehr', [200, 420], false);
+    expect(deFallback).toContain('welcome');
+
+    // Default system fallback
+    const result = await runFallbackMockAgent('unknown_persona', 'anything', null, false);
+    expect(result).toContain('System active');
+  });
+
+  test('runFallbackMockAgent command handles missing reports dispatch', async () => {
+    // VR-9999 must match the VR-\d+ pattern AND include a dispatch word
+    const result = await runFallbackMockAgent('command', 'dispatch volunteer to VR-9999', null, false);
+    expect(result).toContain('ERROR');
+  });
+
+  test('runFallbackMockAgent command handles surge reports', async () => {
+    const reports = readJSON('volunteer_reports.json');
+    const prevReports = JSON.parse(JSON.stringify(reports));
+
+    const surgeReport = {
+      report_id: 'VR-5555',
+      volunteer_id: 'V-200',
+      zone: 'Gate B1',
+      issue_type: 'crowd_surge',
+      text_raw: 'Crowd surge occurring',
+      timestamp: new Date().toISOString(),
+      status: 'open',
+      assigned_volunteer: null,
+    };
+    reports.unshift(surgeReport);
+
+    const result = await runFallbackMockAgent('command', 'show overflow alerts', null, false);
+    expect(result).toContain('CRITICAL');
+
+    // Restore
+    writeJSON('volunteer_reports.json', prevReports, path.join(__dirname));
+  });
+
+  test('runFallbackMockAgent command handles stable reports state', async () => {
+    const reports = readJSON('volunteer_reports.json');
+    const prevReports = JSON.parse(JSON.stringify(reports));
+    writeJSON('volunteer_reports.json', [], path.join(__dirname));
+
+    const result = await runFallbackMockAgent('command', 'show overflow trash report', null, false);
+    expect(result).toContain('STABLE');
+
+    writeJSON('volunteer_reports.json', prevReports, path.join(__dirname));
+  });
+
+  test('runFallbackMockAgent command handles compliance queries', async () => {
+    const result = await runFallbackMockAgent('command', 'show compliance policy sop', null, false);
+    expect(result).toContain('COMPLIANCE SOP');
   });
 
   test('runFallbackMockAgent command persona handles open reports status warnings', async () => {

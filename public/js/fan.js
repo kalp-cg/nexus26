@@ -101,43 +101,43 @@ function connectWebSocket() {
       console.log('[WS] Received message:', msg);
 
       switch (msg.type) {
-        case 'SENSOR_UPDATE':
-          updateGateVisuals(msg.data.gates);
+      case 'SENSOR_UPDATE':
+        updateGateVisuals(msg.data.gates);
 
-          // Auto-retrigger route check if active route is blocked by gate critical spike
-          if (activePathData) {
-            const activeGate = msg.data.gates.find((g) => g.gate_id === activePathData.gate_used);
-            if (activeGate && activeGate.congestion_level === 'critical') {
-              showSystemAlertBanner(
-                `Active Route Warning: Gate ${activePathData.gate_used} has spiked to critical congestion. Rerouting path automatically.`,
-                'critical'
-              );
-              recalculateActiveRoute();
-            }
-          }
-          break;
-        case 'REROUTE_FAN':
-          drawReroute(msg.data);
-          break;
-        case 'EMERGENCY_BROADCAST':
-          showSystemAlertBanner(`Emergency Broadcast: ${msg.data.message}`, 'critical');
-          appendChatBubble('assistant', `Emergency Notice: ${msg.data.message}`);
-          speakResponse(`Attention, safety broadcast: ${msg.data.message}`);
-          break;
-        case 'RESET_SYSTEM':
-          updateGateVisuals(msg.data.sensors.gates);
-          clearRoute();
-          dismissAlertBanner();
-          appendChatBubble('tool-notification', 'System metrics reset to baseline. Active paths cleared.');
-          break;
-        case 'DISPATCH_VOLUNTEER':
-          if (activePathData && activePathData.gate_used === msg.data.zone) {
-            appendChatBubble(
-              'assistant',
-              `Operational Alert: A service volunteer (${msg.data.assigned_volunteer}) has been dispatched to your area to assist with crowd operations.`
+        // Auto-retrigger route check if active route is blocked by gate critical spike
+        if (activePathData) {
+          const activeGate = msg.data.gates.find((g) => g.gate_id === activePathData.gate_used);
+          if (activeGate && activeGate.congestion_level === 'critical') {
+            showSystemAlertBanner(
+              `Active Route Warning: Gate ${activePathData.gate_used} has spiked to critical congestion. Rerouting path automatically.`,
+              'critical'
             );
+            recalculateActiveRoute();
           }
-          break;
+        }
+        break;
+      case 'REROUTE_FAN':
+        drawReroute(msg.data);
+        break;
+      case 'EMERGENCY_BROADCAST':
+        showSystemAlertBanner(`Emergency Broadcast: ${msg.data.message}`, 'critical');
+        appendChatBubble('assistant', `Emergency Notice: ${msg.data.message}`);
+        speakResponse(`Attention, safety broadcast: ${msg.data.message}`);
+        break;
+      case 'RESET_SYSTEM':
+        updateGateVisuals(msg.data.sensors.gates);
+        clearRoute();
+        dismissAlertBanner();
+        appendChatBubble('tool-notification', 'System metrics reset to baseline. Active paths cleared.');
+        break;
+      case 'DISPATCH_VOLUNTEER':
+        if (activePathData && activePathData.gate_used === msg.data.zone) {
+          appendChatBubble(
+            'assistant',
+            `Operational Alert: A service volunteer (${msg.data.assigned_volunteer}) has been dispatched to your area to assist with crowd operations.`
+          );
+        }
+        break;
       }
     } catch (err) {
       console.error('[WS] Error processing message:', err);
