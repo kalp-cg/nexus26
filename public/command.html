@@ -96,7 +96,7 @@
 
     <main id="command-main" class="command-dashboard" role="main">
       <!-- LEFT PANEL: Stadium SVG Heatmap & Sensor Bench -->
-      <section class="dashboard-panel">
+      <section class="dashboard-panel" aria-label="Stadium Heatmap and Sensor Simulator">
         <div class="panel-header">
           <h3>Stadium Heatmap</h3>
           <span class="key-status-label status-configured" style="font-size: 0.65rem">LIVE SENSORS</span>
@@ -113,8 +113,9 @@
               gap: 0.5rem;
             "
           >
-            <div
+            <nav
               class="layer-selector"
+              aria-label="Map Layer Selector"
               style="
                 display: flex;
                 gap: 0.25rem;
@@ -154,9 +155,10 @@
               >
                 Security
               </button>
-            </div>
-            <div
+            </nav>
+            <nav
               class="layer-selector"
+              aria-label="Map View Selector"
               style="
                 display: flex;
                 gap: 0.25rem;
@@ -186,7 +188,7 @@
               >
                 3D Model
               </button>
-            </div>
+            </nav>
           </div>
 
           <!-- SVG 3D Isometric Heatmap -->
@@ -521,7 +523,7 @@
       </section>
 
       <!-- CENTER PANEL: Natural Language Operations Agent Console -->
-      <section class="dashboard-panel command-console-wrapper">
+      <section class="dashboard-panel command-console-wrapper" aria-label="Operations Command Console">
         <div class="console-chat-box">
           <div class="panel-header" style="border: none; padding: 0 0 1rem 0">
             <div>
@@ -564,7 +566,7 @@ COMMAND INTEL ACTIVE. Ask me anything about current operations, or command a dis
       </section>
 
       <!-- RIGHT PANEL: Live Alerts & Volunteer Submissions -->
-      <section class="dashboard-panel">
+      <section class="dashboard-panel" aria-label="Live Dispatch Queue and Report Submission">
         <div class="panel-header">
           <h3>Live Dispatch Queue</h3>
           <span class="key-status-label status-idle" id="active-alert-count">1 Alert</span>

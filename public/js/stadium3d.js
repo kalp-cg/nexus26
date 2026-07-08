@@ -8,7 +8,7 @@
 class Stadium3D {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
-    if (!this.container) return;
+    if (!this.container) {return;}
 
     this.scene = null;
     this.camera = null;
@@ -129,7 +129,7 @@ class Stadium3D {
 
       const geom = new THREE.CylinderGeometry(rx, rx - 15, height, 32, 1, true);
       const mat = new THREE.MeshStandardMaterial({
-        color: color,
+        color,
         side: THREE.DoubleSide,
         roughness: 0.5,
         transparent: true,
@@ -266,7 +266,7 @@ class Stadium3D {
 
   setGateCongestion(gateId, level) {
     const sphere = this.gateSpheres[gateId];
-    if (!sphere) return;
+    if (!sphere) {return;}
 
     let color = 0x10b981; // Green
     if (level === 'critical') {
@@ -289,7 +289,7 @@ class Stadium3D {
   drawPath3D(pathCoords, rerouted) {
     this.clearPath3D();
 
-    if (!pathCoords || pathCoords.length < 2) return;
+    if (!pathCoords || pathCoords.length < 2) {return;}
 
     const points3D = [];
 
@@ -344,13 +344,13 @@ class Stadium3D {
     requestAnimationFrame(() => this.animate());
 
     // Update controls
-    if (this.controls) this.controls.update();
+    if (this.controls) {this.controls.update();}
 
     // Pulse critical gates
     if (this.isPulsing) {
       this.pulseScale += 0.015 * this.pulseDir;
-      if (this.pulseScale > 1.3) this.pulseDir = -1;
-      if (this.pulseScale < 0.9) this.pulseDir = 1;
+      if (this.pulseScale > 1.3) {this.pulseDir = -1;}
+      if (this.pulseScale < 0.9) {this.pulseDir = 1;}
 
       Object.keys(this.gateSpheres).forEach((gateId) => {
         const sphere = this.gateSpheres[gateId];

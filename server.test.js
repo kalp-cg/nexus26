@@ -17,7 +17,7 @@ jest.mock('fs', () => {
     ...originalFs,
     writeFile: jest.fn().mockImplementation((path, data, options, callback) => {
       const cb = typeof options === 'function' ? options : callback;
-      if (cb) cb(null);
+      if (cb) {cb(null);}
     }),
   };
 });
@@ -470,4 +470,59 @@ describe('Nexus26 REST API — Core Operations', () => {
     expect(res.headers['x-content-type-options']).toBe('nosniff');
     expect(res.headers['x-xss-protection']).toBe('1; mode=block');
   });
+
+  // ── Health and Sustainability Endpoints ─────────────────────────────────────
+
+  test('GET /api/health returns operational telemetry', async () => {
+    const res = await request(app).get('/api/health');
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('status', 'operational');
+    expect(res.body).toHaveProperty('version');
+    expect(res.body).toHaveProperty('uptime');
+    expect(res.body.subsystems).toHaveProperty('database');
+  });
+
+  test('GET /api/sustainability returns waste and response metrics', async () => {
+    const res = await request(app).get('/api/sustainability');
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('waste_management');
+    expect(res.body).toHaveProperty('sustainability_score');
+    expect(res.body.waste_management).toHaveProperty('total_reports');
+  });
+
+  // ── Edge Case Inputs and Validators ─────────────────────────────────────────
+
+  test('POST /api/chat/fan rejects history that is too long or not an array', async () => {
+    const res1 = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'hello', history: 'not an array' });
+    expect(res1.statusCode).toBe(400);
+
+    const res2 = await request(app)
+      .post('/api/chat/fan')
+      .send({ message: 'hello', history: Array(15).fill({ role: 'user', content: 'hi' }) });
+    expect(res2.statusCode).toBe(400);
+  });
+
+  test('POST /api/chat/referee returns 404 for invalid persona', async () => {
+    const res = await request(app)
+      .post('/api/chat/referee')
+      .send({ message: 'hello' });
+    expect(res.statusCode).toBe(404);
+  });
+
+  test('POST /api/sensors/update returns 400 for invalid avg_wait_min', async () => {
+    const res = await request(app)
+      .post('/api/sensors/update')
+      .send({ gate_id: 'A1', avg_wait_min: 'invalid' });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('POST /api/transit/update returns 400 for invalid delay_min', async () => {
+    const res = await request(app)
+      .post('/api/transit/update')
+      .send({ line: 'K Line', status: 'delayed', delay_min: 'invalid' });
+    expect(res.statusCode).toBe(400);
+  });
 });
+

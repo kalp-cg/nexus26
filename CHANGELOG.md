@@ -2,6 +2,29 @@
 
 All notable changes to the **Nexus26 — FIFA World Cup 2026 AI Operations Brain** project will be documented in this file.
 
+## [2.2.0] - 2026-07-08
+
+### Added
+
+- **New REST API Endpoints**:
+  - `/api/health`: Exposes application health status, uptime, database/transit telemetry, and active incident/congestion metrics.
+  - `/api/sustainability`: Exposes stadium waste management metrics, open vs. dispatched reports, zone heatmaps, and sustainability score ratings.
+- **Evaluation Criteria Mapping**: Integrated a clear mapping in `README.md` to directly align project features with the challenge evaluation guidelines.
+- **Accessibility Improvements**:
+  - Semantic `<nav>` markup added to language and view selectors in `fan.html` and `command.html`.
+  - Proper screen reader bindings (`aria-expanded` and `aria-controls`) added to the fan ticket drawer, updated dynamically via client script.
+  - Focus outlines (`:focus-visible`), prefers-reduced-motion media query supports, and high contrast styling overrides added to `style.css`.
+- **Stricter Linting Discipline**: Added Rules `curly`, `no-throw-literal`, `no-shadow`, and `consistent-return` to ESLint configuration.
+
+### Refactored
+
+- **Monolith Deconstruction**: Refactored the remaining `server.js` code down to a thin orchestrator (~110 lines) by extracting logic into clean modules:
+  - `lib/routes.js`: Extracted all REST API controllers and WebSocket broadcast mappings.
+  - `lib/middleware.js`: Centralized CORS, rate limiting, security headers, static file routing, and global syntax/system error handlers.
+  - `lib/validators.js`: Decoupled `parseBoundedNumber` and `sanitizeChatHistory` validation helpers.
+  - `lib/constants.js`: Centralized config constants, enums, limits, and database reset templates.
+- **Increased Test Assertions & Confidence**: Raised Jest statement/branch/function coverage limits to 85%/75%/85%/85% respectively, backed by new test suites covering validators, error middlewares, and the health/sustainability routes.
+
 ---
 
 ## [2.1.0] - 2026-07-07

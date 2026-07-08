@@ -1327,3 +1327,41 @@ body {
   background: var(--accent-cyan);
   color: #0f172a;
 }
+
+/* ── Accessibility: Prefers Reduced Motion ────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+  .animated-path {
+    animation: none !important;
+    stroke-dasharray: none !important;
+  }
+}
+
+/* ── Accessibility: High Contrast Mode Support ────────────────────────────── */
+@media (prefers-contrast: high) {
+  :root {
+    --bg-dark: #000000;
+    --bg-card: #111111;
+    --accent-cyan: #00ffff;
+    --status-red: #ff0000;
+    --status-green: #00ff00;
+    --text-primary: #ffffff;
+    --text-muted: #e2e8f0;
+    --border-light: #ffffff;
+  }
+  body {
+    background-image: none !important;
+  }
+  .btn, .ctrl-btn, .preset-btn {
+    border: 2px solid #ffffff !important;
+  }
+}
+

@@ -54,9 +54,8 @@
     <main id="fan-main" class="fan-viewport-wrapper" role="main">
       <div class="mobile-frame">
         <div class="mobile-content">
-          <!-- Controls Header: Lang & Accessibility -->
           <div class="fan-actions-row">
-            <div class="lang-selector">
+            <nav class="lang-selector" aria-label="Language Selector">
               <button
                 class="lang-btn active"
                 onclick="setLanguage('en')"
@@ -89,7 +88,7 @@
               >
                 DE
               </button>
-            </div>
+            </nav>
             <button
               class="accessibility-toggle"
               id="access-toggle"
@@ -127,6 +126,8 @@
                 }
               "
               aria-label="Toggle Digital Match Ticket Details"
+              aria-expanded="false"
+              aria-controls="ticket-details-box"
             >
               <span>Digital Match Ticket</span>
               <span id="ticket-toggle-text">[Show]</span>
@@ -175,8 +176,9 @@
               "
               >Navigation View</span
             >
-            <div
+            <nav
               class="layer-selector"
+              aria-label="Map View Selector"
               style="
                 display: flex;
                 gap: 0.25rem;
@@ -206,7 +208,7 @@
               >
                 3D Model
               </button>
-            </div>
+            </nav>
           </div>
 
           <!-- Dynamic 3D Isometric Stadium Map -->

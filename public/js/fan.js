@@ -226,8 +226,12 @@ function toggleAccessibility() {
 function toggleTicketDetails() {
   const box = document.getElementById('ticket-details-box');
   const text = document.getElementById('ticket-toggle-text');
+  const header = document.querySelector('.ticket-header');
   const isHidden = box.classList.toggle('hidden');
   text.textContent = isHidden ? '[Show]' : '[Hide]';
+  if (header) {
+    header.setAttribute('aria-expanded', String(!isHidden));
+  }
 }
 
 function scanTicket() {
@@ -270,7 +274,7 @@ function handleInputKey(event) {
 
 async function sendTextMessage() {
   const text = chatInput.value.trim();
-  if (!text) return;
+  if (!text) {return;}
   chatInput.value = '';
 
   appendChatBubble('user', text);
@@ -287,7 +291,7 @@ function appendChatBubble(role, text) {
 
   if (role === 'user' || role === 'assistant') {
     chatHistory.push({ role, content: text });
-    if (chatHistory.length > 8) chatHistory.shift();
+    if (chatHistory.length > 8) {chatHistory.shift();}
   }
 }
 
@@ -352,7 +356,7 @@ function startVoiceAssistant() {
 
 // Speak response helper
 function speakResponse(text) {
-  if (!window.speechSynthesis) return;
+  if (!window.speechSynthesis) {return;}
 
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
@@ -417,7 +421,7 @@ async function queryAssistant(messageText) {
 
 // Force a route recalculation
 async function recalculateActiveRoute() {
-  if (!activePathData) return;
+  if (!activePathData) {return;}
   const section = activePathData.destination_section;
 
   appendChatBubble('tool-notification', `Recalculating path for Section ${section}...`);
@@ -447,7 +451,7 @@ function drawReroute(route) {
   activePathData = route;
 
   const coords = route.path;
-  if (!coords || coords.length < 2) return;
+  if (!coords || coords.length < 2) {return;}
 
   let dAttr = `M ${coords[0][0]} ${coords[0][1]}`;
   for (let i = 1; i < coords.length; i++) {
@@ -521,7 +525,7 @@ function saveDrawerKey() {
 function clearDrawerKey() {
   localStorage.removeItem('gemini_api_key');
   const input = document.getElementById('drawer-api-key');
-  if (input) input.value = '';
+  if (input) {input.value = '';}
   appendChatBubble('tool-notification', 'Gemini API Key cleared. Refreshing connection...');
   toggleApiDrawer();
   setTimeout(() => window.location.reload(), 800);

@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   configureAgentModeLabel();
   // Pre-load drawer input if key exists
   const input = document.getElementById('drawer-api-key');
-  if (input) input.value = savedApiKey;
+  if (input) {input.value = savedApiKey;}
 });
 
 // Configure Agent Mode UI
@@ -186,8 +186,8 @@ function updateTestBenchCounters(gates) {
   gates.forEach((gate) => {
     const countLbl = document.getElementById(`lbl-count-${gate.gate_id}`);
     const waitLbl = document.getElementById(`lbl-wait-${gate.gate_id}`);
-    if (countLbl) countLbl.textContent = gate.current_count;
-    if (waitLbl) waitLbl.textContent = gate.avg_wait_min;
+    if (countLbl) {countLbl.textContent = gate.current_count;}
+    if (waitLbl) {waitLbl.textContent = gate.avg_wait_min;}
 
     // Toggle active state classes of buttons
     const row = document.getElementById(`bench-gate-${gate.gate_id}`);
@@ -196,9 +196,9 @@ function updateTestBenchCounters(gates) {
       btns.forEach((btn) => {
         btn.classList.remove('active-low', 'active-high', 'active-critical');
         const text = btn.textContent.toLowerCase();
-        if (text === 'low' && gate.congestion_level === 'low') btn.classList.add('active-low');
-        if (text === 'high' && gate.congestion_level === 'high') btn.classList.add('active-high');
-        if (text === 'spike' && gate.congestion_level === 'critical') btn.classList.add('active-critical');
+        if (text === 'low' && gate.congestion_level === 'low') {btn.classList.add('active-low');}
+        if (text === 'high' && gate.congestion_level === 'high') {btn.classList.add('active-high');}
+        if (text === 'spike' && gate.congestion_level === 'critical') {btn.classList.add('active-critical');}
       });
     }
   });
@@ -312,7 +312,7 @@ function pushSystemAlert(message) {
   const existingAlert = Array.from(alertsList.querySelectorAll('.alert-text')).some((el) =>
     el.textContent.includes(message.substring(0, 30))
   );
-  if (existingAlert) return;
+  if (existingAlert) {return;}
 
   const item = document.createElement('div');
   item.className = 'alert-item severity-critical';
@@ -405,7 +405,7 @@ function handleConsoleKey(event) {
 
 async function sendConsoleCommand() {
   const query = consoleInput.value.trim();
-  if (!query) return;
+  if (!query) {return;}
   consoleInput.value = '';
 
   appendConsoleBubble('user', query);
@@ -438,7 +438,7 @@ async function sendConsoleCommand() {
     const messages = consoleMessages.querySelectorAll('.console-bubble.assistant');
     if (messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
-      if (lastMsg.textContent.includes('PROCESSING')) lastMsg.remove();
+      if (lastMsg.textContent.includes('PROCESSING')) {lastMsg.remove();}
     }
     appendConsoleBubble('assistant', 'Command console communication timeout.');
   }
@@ -455,7 +455,7 @@ function appendConsoleBubble(role, text) {
   // Track history
   if (role === 'user' || role === 'assistant') {
     chatHistory.push({ role, content: text });
-    if (chatHistory.length > 10) chatHistory.shift();
+    if (chatHistory.length > 10) {chatHistory.shift();}
   }
 }
 
@@ -499,21 +499,21 @@ function refreshMapLayerHighlights() {
     circle.classList.remove('section-highlight-active', 'section-highlight-warning');
   });
 
-  if (activeMapLayer === 'crowd') return; // Rely on gate circles
+  if (activeMapLayer === 'crowd') {return;} // Rely on gate circles
 
   activeReports.forEach((report) => {
-    if (report.status === 'dispatched') return; // Skip resolved/assigned logs for mapping clutter
+    if (report.status === 'dispatched') {return;} // Skip resolved/assigned logs for mapping clutter
 
     const zoneText = report.zone.toLowerCase();
     const detailText = report.text_raw.toLowerCase();
 
     let sectionMatched = null;
-    const match = (zoneText + ' ' + detailText).match(/(?:sec-|section|s|sección|seccion)\s*(\d+)/i);
+    const match = (`${zoneText  } ${  detailText}`).match(/(?:sec-|section|s|sección|seccion)\s*(\d+)/i);
     if (match) {
       sectionMatched = match[1];
     } else if (zoneText.includes('concourse')) {
-      if (zoneText.includes('north')) sectionMatched = '118';
-      else if (zoneText.includes('south')) sectionMatched = '102';
+      if (zoneText.includes('north')) {sectionMatched = '118';}
+      else if (zoneText.includes('south')) {sectionMatched = '102';}
     }
 
     if (sectionMatched) {
@@ -585,7 +585,7 @@ async function updateKpiStats() {
   const volunteersEl = document.getElementById('kpi-volunteers-count');
   const transitEl = document.getElementById('kpi-transit-status');
 
-  if (!waitEl) return;
+  if (!waitEl) {return;}
 
   // 1. Avg Wait Time KPI
   try {
@@ -598,9 +598,9 @@ async function updateKpiStats() {
       waitEl.textContent = `${avg}m avg`;
 
       waitEl.className = 'kpi-value';
-      if (parseFloat(avg) > 15) waitEl.classList.add('critical');
-      else if (parseFloat(avg) > 8) waitEl.classList.add('warning');
-      else waitEl.classList.add('stable');
+      if (parseFloat(avg) > 15) {waitEl.classList.add('critical');}
+      else if (parseFloat(avg) > 8) {waitEl.classList.add('warning');}
+      else {waitEl.classList.add('stable');}
     }
   } catch (e) {
     console.error(e);
@@ -610,17 +610,17 @@ async function updateKpiStats() {
   const openCount = activeReports.filter((r) => r.status !== 'dispatched').length;
   incidentsEl.textContent = `${openCount} Open`;
   incidentsEl.className = 'kpi-value';
-  if (openCount > 2) incidentsEl.classList.add('critical');
-  else if (openCount > 0) incidentsEl.classList.add('warning');
-  else incidentsEl.classList.add('stable');
+  if (openCount > 2) {incidentsEl.classList.add('critical');}
+  else if (openCount > 0) {incidentsEl.classList.add('warning');}
+  else {incidentsEl.classList.add('stable');}
 
   // 3. Volunteer headcounts
   const dispatchedCount = activeReports.filter((r) => r.status === 'dispatched').length;
   const available = Math.max(0, 4 - dispatchedCount);
   volunteersEl.textContent = `${available} Available`;
   volunteersEl.className = 'kpi-value';
-  if (available === 0) volunteersEl.classList.add('warning');
-  else volunteersEl.classList.add('stable');
+  if (available === 0) {volunteersEl.classList.add('warning');}
+  else {volunteersEl.classList.add('stable');}
 
   // 4. Transit spine delay warnings
   try {
@@ -774,7 +774,7 @@ function saveDrawerKey() {
 function clearDrawerKey() {
   localStorage.removeItem('gemini_api_key');
   const input = document.getElementById('drawer-api-key');
-  if (input) input.value = '';
+  if (input) {input.value = '';}
   appendConsoleBubble('assistant', 'Gemini API Key cleared. Reloading panels...');
   toggleApiDrawer();
   setTimeout(() => window.location.reload(), 800);

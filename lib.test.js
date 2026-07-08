@@ -12,9 +12,9 @@ jest.mock('fs', () => {
   const originalFs = jest.requireActual('fs');
   return {
     ...originalFs,
-    writeFile: jest.fn().mockImplementation((path, data, options, callback) => {
+    writeFile: jest.fn().mockImplementation((filePath, data, options, callback) => {
       const cb = typeof options === 'function' ? options : callback;
-      if (cb) cb(null);
+      if (cb) {cb(null);}
     }),
   };
 });
@@ -42,15 +42,15 @@ jest.mock('@google/generative-ai', () => {
                     ],
                   },
                 });
-              } else {
-                // Return final text on subsequent calls
-                return Promise.resolve({
-                  response: {
-                    text: () => 'Final Gemini response with gate details.',
-                    getFunctionCalls: () => [],
-                  },
-                });
               }
+              // Return final text on subsequent calls
+              return Promise.resolve({
+                response: {
+                  text: () => 'Final Gemini response with gate details.',
+                  getFunctionCalls: () => [],
+                },
+              });
+
             }),
           }),
         }),
@@ -489,4 +489,74 @@ describe('Nexus26 Core Library Units', () => {
     // Restore reports
     writeJSON('volunteer_reports.json', prevReports, path.join(__dirname));
   });
+
+  // ── Validators Unit Tests ──────────────────────────────────────────────────
+  test('Validators - parseBoundedNumber edge cases', () => {
+    const { parseBoundedNumber } = require('./lib/validators');
+    expect(parseBoundedNumber(undefined, 0, 100)).toBeUndefined();
+    expect(parseBoundedNumber(null, 0, 100)).toBeUndefined();
+    expect(parseBoundedNumber('', 0, 100)).toBeUndefined();
+    expect(parseBoundedNumber('invalid', 0, 100)).toBeNull();
+    expect(parseBoundedNumber(150, 0, 100)).toBeNull();
+    expect(parseBoundedNumber(-10, 0, 100)).toBeNull();
+    expect(parseBoundedNumber(50, 0, 100)).toBe(50);
+  });
+
+  test('Validators - sanitizeChatHistory edge cases', () => {
+    const { sanitizeChatHistory } = require('./lib/validators');
+    expect(sanitizeChatHistory(undefined)).toEqual([]);
+    expect(sanitizeChatHistory(null)).toBeNull();
+    expect(sanitizeChatHistory([{ role: 'user', content: null }, null, { role: undefined, content: 'test' }])).toEqual([
+      { role: 'user', content: null },
+      { role: null, content: null },
+      { role: undefined, content: 'test' }
+    ]);
+  });
+
+  // ── Middleware Unit Tests ──────────────────────────────────────────────────
+  test('Middleware - jsonErrorHandler and globalErrorHandler', () => {
+    const { jsonErrorHandler, globalErrorHandler, notFoundHandler } = require('./lib/middleware');
+    const mockRes = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    };
+    const mockNext = jest.fn();
+
+    // Syntax Error
+    const syntaxErr = new SyntaxError('JSON Error');
+    syntaxErr.status = 400;
+    syntaxErr.body = {};
+    jsonErrorHandler(syntaxErr, {}, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(400);
+    expect(mockRes.json).toHaveBeenCalledWith({ error: 'Malformed JSON request body' });
+
+    // Non-syntax Error
+    const normalErr = new Error('Normal Error');
+    jsonErrorHandler(normalErr, {}, mockRes, mockNext);
+    expect(mockNext).toHaveBeenCalledWith(normalErr);
+
+    // Global error handler 500
+    globalErrorHandler(normalErr, {}, mockRes, mockNext);
+    expect(mockRes.status).toHaveBeenCalledWith(500);
+    expect(mockRes.json).toHaveBeenCalledWith({ error: 'Internal server error' });
+
+    // Not found handler
+    notFoundHandler({ originalUrl: '/test', method: 'GET' }, mockRes);
+    expect(mockRes.status).toHaveBeenCalledWith(404);
+  });
+
+  // ── Operations & Routes Module Initializers Coverage ───────────────────────
+  test('Operations & Routes module initialization edge cases', () => {
+    const operations = require('./lib/operations');
+    const routes = require('./lib/routes');
+
+    // Call init with no params or non-function params
+    operations.initOperations(null, null);
+    routes.initRoutes(null, null);
+
+    // Verify they don't crash and maintain basic operation
+    expect(operations.local_get_transit_status).toBeDefined();
+    expect(routes.initRoutes).toBeDefined();
+  });
 });
+
